@@ -10,6 +10,7 @@ import {saveMedia,readMedia,materializeImage} from './media.mjs';
 import { generateText, generateImage, checkAiHealth } from './ai.mjs';
 import {privateCall} from './private.mjs';
 import { createScheduler } from './scheduler.mjs';
+import { isAuthenticated, getAdminPassword, computeAuthToken } from './auth.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4317);
@@ -47,6 +48,10 @@ const server = http.createServer(async(req,res)=>{
       }
       try{const m=await readMedia(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,relName);res.writeHead(200,{'Content-Type':m.mime,'Content-Length':m.buffer.length,'Cache-Control':'private, max-age=3600'});return res.end(m.buffer)}catch{return json(res,404,{error:'Medya bulunamadı.'})}
     }
+    if(p==='/api/auth/login'&&req.method==='POST'){const b=await body(req);const pw=String(b.password||'').trim();if(pw===getAdminPassword()){const token=computeAuthToken(pw);res.setHeader('Set-Cookie',`socialdesk_auth=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=2592000`);return json(res,200,{ok:true,token})}return json(res,401,{error:'Geçersiz şifre.'})}
+    if(p==='/api/auth/logout'&&req.method==='POST'){res.setHeader('Set-Cookie','socialdesk_auth=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');return json(res,200,{ok:true})}
+    if(p==='/api/auth/status'&&req.method==='GET')return json(res,200,{authenticated:isAuthenticated(req)});
+    if(p.startsWith('/api/')&&!isAuthenticated(req))return json(res,401,{error:'Yetkilendirme gerekli. Lütfen şifrenizle giriş yapın.',code:'UNAUTHORIZED'});
     if(p==='/api/ai/health'&&req.method==='GET')return json(res,200,await checkAiHealth(integrations.ai()));
     if(p==='/api/ai/image'&&req.method==='POST'){const b=await body(req);const config=integrations.ai();const image=await generateImage(config,{prompt:b.prompt});return json(res,201,await materializeImage(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,image,config))}
     if(p==='/api/workspace' && req.method==='GET') return json(res,200,{...store.read(), connection:{configured:integrations.public().accounts.some(a=>a.configured),verified:integrations.public().accounts.some(a=>a.verified),publishing:integrations.public().accounts.some(a=>a.publishing)},integrations:integrations.public(), mode:'local'});

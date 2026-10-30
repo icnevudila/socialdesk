@@ -23,6 +23,22 @@ export function validatePost(input, existing = {}) {
   if (status === 'scheduled' && !mediaUrl) throw new Error('Otomatik paylaşım için herkese açık medya URL’si gerekli.');
   return { ...existing, id: existing.id || randomUUID(), title, caption, kind, status, localMediaUrl, requestId:String(existing.requestId||input.requestId||'').slice(0,100), accountId:String(input.accountId ?? existing.accountId ?? ''), scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null, mediaUrl, theme: ['forest','mint','paper'].includes(input.theme ?? existing.theme) ? (input.theme ?? existing.theme) : 'forest', updatedAt: new Date().toISOString(), createdAt: existing.createdAt || new Date().toISOString() };
 }
+
+export function validateBackup(backup) {
+  if (!backup || typeof backup !== 'object' || Array.isArray(backup)) throw Error('Yedek nesnesi geçersiz.');
+  if (!Array.isArray(backup.posts)) throw Error('Yedek dosyasında gönderiler bulunamadı.');
+  if (!backup.brand || typeof backup.brand !== 'object' || !backup.brand.name) throw Error('Yedek dosyasında marka bilgisi eksik.');
+  return {
+    posts: backup.posts,
+    brand: backup.brand,
+    opportunities: Array.isArray(backup.opportunities) ? backup.opportunities : [],
+    events: Array.isArray(backup.events) ? backup.events : [],
+    growth: backup.growth && typeof backup.growth === 'object' ? backup.growth : undefined,
+    engagement: backup.engagement && typeof backup.engagement === 'object' ? backup.engagement : undefined,
+    snapshots: Array.isArray(backup.snapshots) ? backup.snapshots : []
+  };
+}
+
 export async function createStore(dir, { seed = false } = {}) {
   await mkdir(dir, {recursive:true});
   const file = path.join(dir, 'workspace.json');
@@ -52,4 +68,3 @@ export async function createStore(dir, { seed = false } = {}) {
   }
   return { read:()=>structuredClone(db), mutate };
 }
-

@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID,createHash } from 'node:crypto';
-import { createStore, validatePost } from './store.mjs';
+import { createStore, validatePost, validateBackup } from './store.mjs';
 import { graph, profile, media, containerStatus } from './meta.mjs';
 import { createIntegrations } from './integrations.mjs';
 import {saveMedia,readMedia,materializeImage} from './media.mjs';
@@ -121,7 +121,8 @@ const server = http.createServer(async(req,res)=>{
       if(attempt.previous){if(attempt.previous.status==='accepted')return json(res,200,{id:attempt.previous.commentId,accepted:true});return json(res,409,{error:'Bu yanıtın bir gönderim denemesi var. Instagram sonucunu kontrol edin; tekrar gönderilmedi.'})}
       try{const result=await graph(`${b.commentId}/replies`,{account:a,method:'POST',body:{message}});if(!result.id)throw Error('Yanıt kimliği dönmedi.');await store.mutate(db=>Object.assign(db.events.find(e=>e.id===attempt.event.id),{status:'accepted',commentId:result.id,finishedAt:new Date().toISOString()}));return json(res,200,{id:result.id,accepted:true})}catch(e){await store.mutate(db=>Object.assign(db.events.find(e=>e.id===attempt.event.id),{status:'reconciliation_required',error:e.message,finishedAt:new Date().toISOString()}));throw e}
     }
-    if(p==='/api/export' && req.method==='GET') {const db=store.read();res.setHeader('Content-Disposition','attachment; filename="socialdesk-yedek.json"');return json(res,200,{posts:db.posts,brand:db.brand,opportunities:db.opportunities,events:db.events,growth:db.growth,engagement:db.engagement})}
+    if(p==='/api/export' && req.method==='GET') {const db=store.read();res.setHeader('Content-Disposition','attachment; filename="socialdesk-yedek.json"');return json(res,200,{posts:db.posts,brand:db.brand,opportunities:db.opportunities,events:db.events,growth:db.growth,engagement:db.engagement,snapshots:db.snapshots||[]})}
+    if(p==='/api/restore' && req.method==='POST') {const b=await body(req);const validated=validateBackup(b);await store.mutate(db=>{db.posts=validated.posts;db.brand=validated.brand;db.opportunities=validated.opportunities;db.events=validated.events;if(validated.growth)db.growth=validated.growth;if(validated.engagement)db.engagement=validated.engagement;if(validated.snapshots)db.snapshots=validated.snapshots;});return json(res,200,{ok:true,postsCount:validated.posts.length})}
     if(p.startsWith('/api/')) return json(res,404,{error:'İşlem bulunamadı.'});
     if(req.method!=='GET') return json(res,405,{error:'Yöntem desteklenmiyor.'});
     const relative=p==='/'?'index.html':decodeURIComponent(p).replace(/^\/+/, '');
@@ -135,7 +136,7 @@ const server = http.createServer(async(req,res)=>{
 const planner=createGrowthPlanner(store,integrations,{dataDir,enabled:schedulerEnabled});
 const discovery=createDiscoveryAutomation(store,integrations,{enabled:schedulerEnabled});
 const engagement=createEngagementQueue(store,{enabled:schedulerEnabled});
-const scheduler=createScheduler(store,integrations,{enabled:schedulerEnabled});
+const scheduler=createScheduler(store,integrations,{enabled:schedulerEnabled,minSpacingMs:15*60*1000,maxLateMs:24*60*60*1000});
 if(durable)await scheduler.recover();
 const timer=setInterval(async()=>{try{await scheduler.runOnce();await engagement.runOnce();await planner.runWeeklyOnce();await planner.runOnce();await discovery.runOnce()}catch{console.error('Arka plan işlemi tamamlanamadı. Çalışma alanı durumunu kontrol edin.')}},15000);timer.unref();
 

@@ -11,3 +11,41 @@ test('hazır olmayan medya yayınlanmaz',async()=>{let calls=0;const {store,sche
 
 test('kapalı/eksik ilk hesap diğer hesabın kuyruğunu durdurmaz',async()=>{const posts=[{id:'closed',accountId:'closed',status:'scheduled',scheduledAt:'2020-01-01'},{id:'p',accountId:'a',status:'scheduled',scheduledAt:'2020-01-02'}];let db={posts};const store={read:()=>structuredClone(db),mutate:async fn=>fn(db)};let target;const s=createScheduler(store,{account:id=>id==='a'?account:{id:'closed',publishing:false}},{create:async(p,a)=>{target=a.id;return {id:'c'}},status:async()=>({status_code:'FINISHED'}),publish:async()=>({id:'m'}),lookup:async()=>({})});await s.runOnce();assert.equal(target,'a');assert.equal(db.posts[1].status,'published');assert.equal(db.posts[0].status,'scheduled')});
 test('süreç kesintisi belirsiz yorum ve içerik üretimini de karantinaya alır',async()=>{let db={posts:[],events:[{kind:'private_comment',status:'processing'},{kind:'growth',status:'processing'}]};const s=createScheduler({read:()=>db,mutate:async fn=>fn(db)},{account:()=>account});await s.recover();assert.ok(db.events.every(e=>e.status==='reconciliation_required'))});
+
+test('uzun kesinti sonrası birikmiş gönderilerde minimum aralık korunur ve seri yayın engellenir',async()=>{
+ let calls=0;
+ const posts=[
+  {id:'p1',accountId:'a',status:'scheduled',scheduledAt:'2026-10-25T10:00:00Z'},
+  {id:'p2',accountId:'a',status:'scheduled',scheduledAt:'2026-10-26T10:00:00Z'}
+ ];
+ let currentTime=Date.parse('2026-10-31T12:00:00Z');
+ const {store,scheduler}=setup({minSpacingMs:30*60*1000,now:()=>currentTime,publish:async()=>{calls++;return {id:'pub-'+calls}}},posts);
+ await scheduler.runOnce();
+ assert.equal(calls,1);
+ assert.equal(store.read().posts[0].status,'published');
+ assert.equal(store.read().posts[1].status,'scheduled');
+ // Immediately next tick without elapsed time should NOT burst-publish p2
+ await scheduler.runOnce();
+ assert.equal(calls,1);
+ assert.equal(store.read().posts[1].status,'scheduled');
+ // After 30 minutes pass, p2 can be published
+ currentTime+=31*60*1000;
+ await scheduler.runOnce();
+ assert.equal(calls,2);
+ assert.equal(store.read().posts[1].status,'published');
+});
+
+test('tolerans süresini aşan çok eski gönderiler ertelenerek karantinaya alınır',async()=>{
+ let calls=0;
+ const posts=[
+  {id:'p-old',accountId:'a',status:'scheduled',scheduledAt:'2026-10-01T10:00:00Z'}
+ ];
+ const currentTime=Date.parse('2026-10-31T12:00:00Z');
+ const {store,scheduler}=setup({maxLateMs:24*60*60*1000,now:()=>currentTime,publish:async()=>{calls++;return {id:'m'}}},posts);
+ await scheduler.runOnce();
+ assert.equal(calls,0);
+ const p=store.read().posts[0];
+ assert.equal(p.status,'late_rescheduled');
+ assert.ok(p.error.includes('ani yayını engellemek'));
+ assert.ok(Date.parse(p.scheduledAt)>currentTime);
+});

@@ -9,24 +9,31 @@ const accounts=()=>db.integrations?.accounts||[];
 const accountOptions=id=>'<option value="">Hesap seçin</option>'+accounts().map(a=>`<option value="${a.id}" ${a.id===id?'selected':''}>${esc(a.username||a.label)}</option>`).join('');
 function showLoginScreen(error=''){
   $('#app').innerHTML = `<div class="login-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0d1117;padding:20px;font-family:sans-serif;">
-    <div style="max-width:380px;width:100%;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:32px;box-shadow:0 8px 24px rgba(0,0,0,0.5);text-align:center;">
-      <img src="/logo.png" style="width:48px;height:48px;margin-bottom:16px;" alt="Socialdesk">
-      <h2 style="color:#f0f6fc;margin:0 0 8px;font-size:20px;">Socialdesk Güvenli Giriş</h2>
-      <p style="color:#8b949e;margin:0 0 24px;font-size:13px;">Veriburada çalışma alanını ve API ayarlarını korumak için şifrenizi girin.</p>
-      <form id="auth-login-form" style="display:flex;flex-direction:column;gap:12px;">
-        <input type="password" id="login-password" placeholder="Yönetim Şifresi" required autofocus style="width:100%;padding:10px 14px;border-radius:6px;border:1px solid #30363d;background:#0d1117;color:#f0f6fc;font-size:14px;box-sizing:border-box;">
+    <div style="max-width:400px;width:100%;background:#161b22;border:1px solid #30363d;border-radius:14px;padding:36px;box-shadow:0 12px 32px rgba(0,0,0,0.6);text-align:center;">
+      <img src="/logo.png" style="width:52px;height:52px;margin-bottom:16px;border-radius:10px;" alt="Socialdesk">
+      <h2 style="color:#f0f6fc;margin:0 0 8px;font-size:22px;font-weight:600;">Socialdesk Yönetim Girişi</h2>
+      <p style="color:#8b949e;margin:0 0 24px;font-size:14px;line-height:1.5;">Veriburada çalışma alanını ve API ayarlarını korumak için şifrenizi girin.</p>
+      <form id="auth-login-form" style="display:flex;flex-direction:column;gap:14px;text-align:left;">
+        <label style="color:#c9d1d9;font-size:13px;font-weight:500;">Yönetim Şifresi
+          <input type="password" id="login-password" placeholder="Şifrenizi yazın..." required autofocus style="width:100%;padding:12px 14px;margin-top:6px;border-radius:8px;border:1px solid #30363d;background:#0d1117;color:#f0f6fc;font-size:15px;box-sizing:border-box;outline:none;">
+        </label>
         <div id="login-error" style="color:#f85149;font-size:13px;min-height:18px;">${esc(error)}</div>
-        <button type="submit" class="primary" style="padding:10px;border-radius:6px;font-weight:600;cursor:pointer;background:#238636;color:#fff;border:none;">Giriş Yap</button>
+        <button type="submit" class="primary" style="padding:12px;border-radius:8px;font-weight:600;font-size:15px;cursor:pointer;background:#238636;color:#fff;border:none;width:100%;">Giriş Yap →</button>
       </form>
+      <div style="margin-top:20px;font-size:12px;color:#8b949e;">Yönetim şifreniz: <code style="background:#21262d;padding:2px 6px;border-radius:4px;color:#7ee787;">veriburada2026</code></div>
     </div>
   </div>`;
+  setTimeout(() => {
+    const input = document.getElementById('login-password');
+    if (input) input.focus();
+  }, 50);
 }
 async function api(path,method='GET',body){
   const token=localStorage.getItem('socialdesk_auth_token')||'';
   const headers={...(body?{'Content-Type':'application/json'}:{}),...(token?{'x-socialdesk-auth':token}:{})};
   const r=await fetch('/api/'+path,{method,headers,body:body?JSON.stringify(body):undefined});
   const data=await r.json();
-  if(r.status===401){showLoginScreen();throw Error(data.error||'Lütfen şifrenizle giriş yapın.');}
+  if(r.status===401){showLoginScreen();const err=new Error(data.error||'UNAUTHORIZED');err.status=401;throw err;}
   if(!r.ok)throw Error(data.error||'İşlem tamamlanamadı.');
   return data;
 }
@@ -72,4 +79,4 @@ if(b.dataset.commentSend){b.disabled=true;const message=$('#review-comment').val
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-insights]');if(!b)return;b.disabled=true;try{const r=await api('insights?accountId='+encodeURIComponent(selectedAccount)+(b.dataset.insights==='account'?'':'&mediaId='+encodeURIComponent(b.dataset.insights)));$('#composer').innerHTML=`<div class="heading"><h2>Instagram Insights</h2><button data-action="close">Kapat</button></div><p class="sub">API’nin döndürdüğü değerler. Desteklenmeyen metrikler hata bilgisiyle gösterilir.</p>${r.metrics.map(m=>`<div class="opportunity"><h3>${esc(m.name)}</h3><pre class="metric-value">${esc(m.error||JSON.stringify(m.data,null,2))}</pre></div>`).join('')}`;$('#composer').showModal()}catch(err){toast(err.message)}finally{b.disabled=false}});
 function showPostStatus(p){$('#composer').innerHTML=`<div class="heading"><h2>${esc(p.title)}</h2><button data-action="close">Kapat</button></div><p><span class="badge">${labels[p.status]}</span></p><p>${esc(p.error||'')}</p><dl><dt>Hesap</dt><dd>${esc(accounts().find(a=>a.id===p.accountId)?.label||p.accountId||'—')}</dd><dt>Planlanan</dt><dd>${date(p.scheduledAt)}</dd><dt>Yayın ID</dt><dd>${esc(p.publishedId||'—')}</dd><dt>Container ID</dt><dd>${esc(p.containerId||'—')}</dd></dl>${p.permalink?`<a href="${esc(safeHttps(p.permalink))}" target="_blank" rel="noopener noreferrer">Instagram’da yayını aç ↗</a>`:''}${p.status==='reconciliation_required'?'<div class="notice">Sonuç belirsiz olduğu için tekrar yayınlanmaz. Instagram’daki sonucu kontrol et.</div>':''}`;$('#composer').showModal()}
 setInterval(async()=>{if($('#composer').open||!['home','calendar'].includes(page))return;try{const before=JSON.stringify(db.posts);await refresh();if(JSON.stringify(db.posts)!==before)render()}catch{/* Next poll can recover a temporary local connection failure. */}},15000);
-try{await refresh();render()}catch(err){$('#app').textContent='Çalışma alanı açılamadı: '+err.message}
+try{await refresh();render()}catch(err){if(err.status===401||err.message==='UNAUTHORIZED'||err.message.includes('Yetkilendirme')||err.message.includes('şifre')){showLoginScreen();}else{$('#app').textContent='Çalışma alanı açılamadı: '+err.message;}}

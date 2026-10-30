@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 
 export function getAdminPassword() {
-  return (process.env.ADMIN_PASSWORD || 'veriburada2026').trim();
+  return (process.env.ADMIN_PASSWORD || 'alidvn123@!').trim();
 }
 
 export function computeAuthToken(password) {

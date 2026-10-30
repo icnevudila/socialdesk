@@ -170,3 +170,9 @@ npm.cmd start
 İlk iskeletten sonra Türkçe UI, çoklu hesap yapılandırması, GPT/AI adaptörü, medya yükleme/önizleme, kalıcı scheduler, Insights ve yorum uçları, deneysel instagrapi adapteri ve kurulum ekranı eklendi. Kullanıcının verdiği Socialdesk logosu ve mor/fuşya/turuncu paleti yeşil referansın yerini aldı. Özgün SVG çizimler public/workspace-art.svg ve calendar-art.svg içindedir.
 
 Önceki "app.js/style.css yok" maddeleri artık geçerli değil. Güncel işlev ve sınırlar README.md ile public/setup.html içinde. AI bağlantı dosyaları kullanıcı tarafından yetkilendirilmiş başka bir sohbet tarafından eşzamanlı düzenleniyor; onları geri almayın. Gerçek Meta ve GPT işlemleri bu sohbet tarafından yapılmadı.
+
+## 31 Ekim — Sonraki bot için güncel kaynak
+
+Bu devam dosyasındaki eski kurulum ve hazır olma ifadeleri güncel kabul raporu değildir. **Önce DIGER_BOTA_DEVIR.md dosyasını oku.** Kodda günlük/haftalık hazırlama, konu bazlı otomatik keşif/yorum, auth ve kuyruk düzeltmeleri var. 38 yerel/taklit test geçti. Güncel canlı Meta 190 hatası, AI bağlantı hatası ve eksik özel oturum devam ediyor.
+
+Eşzamanlı diğer çalışma `493ecc9` ile 61 açıklama/tarihi güncelledi; geri alma. Asıl çalışma alanına QA verisi yazılmadı. Kullanıcı başka bota bağlantı/kurulum ve gerçek tam otonom kabul testlerini devredecek.

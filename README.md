@@ -38,3 +38,11 @@ Kullanıcı kendi girişi için `scripts/private_cli.py login` komutunu interakt
 `npm test` yerel HTTP, kalıcılık ve sağlayıcı yanıtlarını taklit eden kontrolleri çalıştırır. Gerçek hesap/API anahtarı olmadan canlı bağlantı/yayın başarısı iddia edilmez. Insights desteği/izinleri hesap ve medya türüne göre değişir; arayüz erişilemeyen metrikleri hata olarak gösterir. Video üretimi yok; Reels dosyası yüklenir veya senaryo hazırlanır.
 
 Uygulama kapalıyken zamanlayıcı çalışmaz. Aynı veri klasöründe tek süreç kullanın. `data/` özel dosyalar içerir; paylaşmayın. Export sırları ve medya dosyalarını içermez. AI bağlantısı başka bir sohbet tarafından düzenleniyorsa onun değişikliklerini koruyun.
+
+## 31 Ekim 2026 — Güvenilirlik ve otomasyon güncellemesi
+
+`growth.mjs` günlük/haftalık hazırlamayı, `engagement.mjs` konu bazlı otomatik keşif ve yorum kuyruğunu içerir. Otomatik özellikler gerçek çalışma alanında henüz açılmadı. Yerel/taklit test paketi 38/38 geçti; rapor `artifacts/test-results.tap`.
+
+Güncel canlı durum ve diğer bota yapılacak kurulum/geliştirme devri **DIGER_BOTA_DEVIR.md** içindedir. Güncel Meta tokenı 190 hatası veriyor, AI servisine erişilemiyor, özel Instagram oturumu yok. Önceki FINISHED container testi herkese açık yayın kanıtı değildir.
+
+Yerel backend güncel kodla 4317’de çalışır. Kalıcı veri kilidi, gerçek auth, hesap eşleşmesi, aynı istek/yorum tekrarını engelleme ve hata sonrası uzlaştırma var. Vercel serverless modunda kalıcı backend yoksa mutasyonlar/worker kapalıdır; kesintisiz otonomi için kalıcı Node backend gerekir.

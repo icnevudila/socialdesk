@@ -21,7 +21,7 @@ const defaultDataDir = process.env.VERCEL ? '/tmp/socialdesk-data' : path.join(r
 const dataDir=process.env.SOCIALDESK_DATA_DIR||defaultDataDir;
 const durable=!process.env.VERCEL;
 const schedulerEnabled=durable&&process.env.SOCIALDESK_DISABLE_SCHEDULER!=='true';
-const store = await createStore(dataDir);
+const store = await createStore(dataDir, { seed: Boolean(process.env.VERCEL) });
 const releaseDataLease=durable?await acquireDataLease(dataDir):()=>{};
 const integrations=await createIntegrations(dataDir);
 const loginAttempts=new Map();

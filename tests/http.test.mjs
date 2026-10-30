@@ -7,11 +7,11 @@ import os from 'node:os';
 import path from 'node:path';
 const root=path.resolve(import.meta.dirname,'..');
 test('HTTP CRUD, kalıcılık, yayın engeli ve yerel erişim',async()=>{
- const dir=await mkdtemp(path.join(os.tmpdir(),'socialdesk-http-'));let child;const port=14317;const base=`http://127.0.0.1:${port}`;
- async function start(){child=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:String(port),SOCIALDESK_DATA_DIR:dir,INSTAGRAM_ACCESS_TOKEN:'',INSTAGRAM_USER_ID:'',ENABLE_PUBLISHING:'false'},stdio:['ignore','pipe','pipe']});await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw Error('Sunucu başlatılamadı')}),new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('Sunucu zaman aşımı')),5000);t.unref()})])}
+ const dir=await mkdtemp(path.join(os.tmpdir(),'socialdesk-http-'));let child;const port=14317;const base=`http://127.0.0.1:${port}`;let auth='';
+ async function start(){child=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,PORT:String(port),SOCIALDESK_DATA_DIR:dir,INSTAGRAM_ACCESS_TOKEN:'',INSTAGRAM_USER_ID:'',ENABLE_PUBLISHING:'false',ADMIN_PASSWORD:'test-password',VERCEL:'',SOCIALDESK_DISABLE_SCHEDULER:'false'},stdio:['ignore','pipe','pipe']});await Promise.race([once(child.stdout,'data'),once(child,'exit').then(()=>{throw Error('Sunucu başlatılamadı')}),new Promise((_,reject)=>{const t=setTimeout(()=>reject(Error('Sunucu zaman aşımı')),5000);t.unref()})])}
  async function stop(){if(child&&child.exitCode===null){const ended=once(child,'exit');child.kill();await ended}}
- async function req(p,method='GET',body,headers={}){const r=await fetch(base+p,{method,headers:{...(body?{'Content-Type':'application/json'}:{}),...headers},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()}}
- try{await start();const post={title:'Test',caption:'Açıklama',status:'planned',scheduledAt:'2099-01-01T12:00:00Z'};let r=await req('/api/posts','POST',post);assert.equal(r.status,201);const id=r.data.id;
+ async function req(p,method='GET',body,headers={}){const r=await fetch(base+p,{method,headers:{...(body?{'Content-Type':'application/json'}:{}),...(auth?{Authorization:'Bearer '+auth}:{}),...headers},body:body?JSON.stringify(body):undefined});return {status:r.status,data:await r.json()}}
+ try{await start();assert.equal((await req('/api/workspace')).status,401);auth=(await req('/api/auth/login','POST',{password:'test-password'})).data.token;const post={title:'Test',caption:'Açıklama',status:'planned',scheduledAt:'2099-01-01T12:00:00Z'};let r=await req('/api/posts','POST',post);assert.equal(r.status,201);const id=r.data.id;
  assert.equal((await req('/api/posts/'+id,'PUT',{...post,title:'Düzenlendi'})).status,200);
  assert.equal((await req('/api/posts','POST',{...post,status:'scheduled',mediaUrl:'https://example.com/a.jpg'})).status,409);
  assert.equal((await req('/api/posts','POST',{...post,scheduledAt:'bozuk'})).status,400);

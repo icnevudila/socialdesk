@@ -1,24 +1,4 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getAdminPassword, computeAuthToken, isAuthenticated } from '../auth.mjs';
-
-test('Şifre ve yetkilendirme sözleşmesi', async () => {
-  const pw = getAdminPassword();
-  assert.ok(pw.length >= 6, 'Şifre yeterince uzun olmalı');
-
-  const token = computeAuthToken(pw);
-  assert.equal(typeof token, 'string');
-  assert.equal(token.length, 64, 'SHA-256 hash 64 karakter olmalı');
-
-  // Yanlış şifre hash'i eşleşmemeli
-  const wrongToken = computeAuthToken('yanlisSifre123');
-  assert.notEqual(token, wrongToken);
-
-  // Başlık üzerinden doğrulama
-  const reqWithHeader = { headers: { 'x-socialdesk-auth': token } };
-  assert.equal(isAuthenticated(reqWithHeader), true);
-
-  // Cookie üzerinden doğrulama
-  const reqWithCookie = { headers: { cookie: `other=1; socialdesk_auth=${token}; more=2` } };
-  assert.equal(isAuthenticated(reqWithCookie), true);
-});
+import {computeAuthToken,isAuthenticated,verifyAuthToken,passwordMatches} from '../auth.mjs';
+test('yetkisiz, yanlış, süresi geçmiş ve değiştirilmiş oturumlar reddedilir',()=>{const old=process.env.ADMIN_PASSWORD;process.env.ADMIN_PASSWORD='test-only-password';try{assert.equal(isAuthenticated({headers:{}}),false);assert.equal(passwordMatches('wrong'),false);assert.equal(passwordMatches('test-only-password'),true);const token=computeAuthToken('test-only-password');assert.equal(isAuthenticated({headers:{cookie:`socialdesk_auth=${token}`}}),true);assert.equal(isAuthenticated({headers:{authorization:`Bearer ${token}`}}),true);assert.equal(verifyAuthToken(token+'f'),false);assert.equal(verifyAuthToken(computeAuthToken('wrong')),false);assert.equal(verifyAuthToken(computeAuthToken('test-only-password',{now:Date.now()-9*60*60*1000})),false);assert.notEqual(token,computeAuthToken('test-only-password'));process.env.ADMIN_PASSWORD='';assert.equal(isAuthenticated({headers:{}}),false)}finally{if(old===undefined)delete process.env.ADMIN_PASSWORD;else process.env.ADMIN_PASSWORD=old}});

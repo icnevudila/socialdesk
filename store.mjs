@@ -17,7 +17,7 @@ export function validatePost(input, existing = {}) {
   if (!['draft', 'planned', 'scheduled'].includes(status)) throw new Error('Geçersiz kayıt durumu.');
   const localMediaUrl=String(input.localMediaUrl ?? existing.localMediaUrl ?? '');
   if(localMediaUrl&&!/^\/media\/[\da-f-]{36}\.(png|jpg|webp|mp4)$/.test(localMediaUrl))throw Error('Geçersiz yerel medya.');
-  if (mediaUrl) { let u; try { u = new URL(mediaUrl); } catch { throw new Error('Geçerli bir medya URL’si girin.'); } if (u.protocol !== 'https:') throw new Error('Medya URL’si HTTPS olmalı.'); }
+  if (mediaUrl) { let u; try { u = new URL(mediaUrl); } catch { throw new Error('Geçerli bir medya URL’si girin.'); } if(u.username||u.password)throw Error('Medya bağlantısına kullanıcı adı veya parola eklenemez.'); if (u.protocol !== 'https:') throw new Error('Medya URL’si HTTPS olmalı.'); }
   if (scheduledAt && !Number.isFinite(Date.parse(scheduledAt))) throw new Error('Geçerli bir tarih seçin.');
   if (status !== 'draft' && (!scheduledAt || !Number.isFinite(Date.parse(scheduledAt)) || Date.parse(scheduledAt) <= Date.now())) throw new Error('Gelecekte bir paylaşım zamanı seçin.');
   if (status === 'scheduled' && !mediaUrl) throw new Error('Otomatik paylaşım için herkese açık medya URL’si gerekli.');
@@ -42,6 +42,8 @@ export async function createStore(dir, { seed = false } = {}) {
       db = {posts:[], opportunities:[], brand:{name:'Benim markam', handle:'', sector:'', audience:'', tone:'Samimi ve net'}, events:[]};
     }
   }
+  if(!db||!Array.isArray(db.posts)||!Array.isArray(db.opportunities)||!db.brand||typeof db.brand!=='object')throw Error('Çalışma alanı dosyası geçersiz. Yedekten geri yükleyin.');
+  db.events??=[];if(!Array.isArray(db.events))throw Error('Çalışma alanı olay kayıtları geçersiz.');
   // A single process owns the store. Queue mutations and atomically replace the file.
   let queue = Promise.resolve();
   async function mutate(fn) {

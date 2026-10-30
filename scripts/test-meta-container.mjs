@@ -1,0 +1,9 @@
+import {readFile,writeFile} from 'node:fs/promises';
+import {createIntegrations} from '../integrations.mjs';
+import {createContainer,containerStatus} from '../meta.mjs';
+if(!process.argv.includes('--prepare-one'))throw Error('Tek container hazırlamak için --prepare-one gerekli. Yayınlama çağrısı yapılmaz.');
+const file=new URL('../artifacts/live-meta-container.json',import.meta.url);
+try{await readFile(file);throw Error('Bu testin önceki denemesi var. Önce artifacts/live-meta-container.json sonucunu inceleyin.')}catch(e){if(e.code!=='ENOENT')throw e}
+const db=JSON.parse(await readFile(new URL('../data/workspace.json',import.meta.url),'utf8'));const i=await createIntegrations(new URL('../data',import.meta.url).pathname.replace(/^\/(\w:)/,'$1'));const post=db.posts.find(p=>p.status==='scheduled'&&p.kind==='image'&&p.mediaUrl?.startsWith('https://'));if(!post)throw Error('Test için planlı bir görsel bulunamadı.');const a=i.account(post.accountId);
+const report={startedAt:new Date().toISOString(),mode:'ONE_CONTAINER_ONLY_NO_PUBLISH',postId:post.id,title:post.title,accountId:a.id,publishCalled:false,status:'request_started'};const save=()=>writeFile(file,JSON.stringify(report,null,2));await save();
+try{const response=await createContainer(post,a);if(!response.id)throw Error('Container kimliği dönmedi.');report.containerId=response.id;report.status='container_created';await save();for(let n=0;n<12;n++){const r=await containerStatus(response.id,a);report.providerStatus=r.status_code;await save();if(['FINISHED','ERROR','EXPIRED','PUBLISHED'].includes(r.status_code))break;await new Promise(r=>setTimeout(r,1500))}report.status=report.providerStatus==='FINISHED'?'ready_without_publication':'needs_review'}catch(e){report.status='reconciliation_required';report.error=e.message}report.finishedAt=new Date().toISOString();await save();console.log(JSON.stringify(report,null,2));

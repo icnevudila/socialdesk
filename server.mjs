@@ -33,7 +33,20 @@ const server = http.createServer(async(req,res)=>{
   try {
     const url=new URL(req.url,'http://localhost'); const p=url.pathname;
     if(p==='/api/media'&&req.method==='POST'){let bytes=0;const chunks=[];for await(const c of req){bytes+=c.length;if(bytes>50*1024*1024)throw Error('Dosya en fazla 50 MB olabilir.');chunks.push(c)}return json(res,201,await saveMedia(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,Buffer.concat(chunks)))}
-    if(p.startsWith('/media/')&&req.method==='GET'){try{const m=await readMedia(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,p.slice(7));res.writeHead(200,{'Content-Type':m.mime,'Content-Length':m.buffer.length,'Cache-Control':'private, max-age=3600'});return res.end(m.buffer)}catch{return json(res,404,{error:'Medya bulunamadı.'})}}
+    if(p.startsWith('/media/')&&req.method==='GET'){
+      const relName = p.slice(7);
+      const pubPath = path.resolve(root, 'public', 'media', relName);
+      if(pubPath.startsWith(path.resolve(root, 'public', 'media'))){
+        try{
+          const buf = await readFile(pubPath);
+          const ext = path.extname(pubPath).toLowerCase();
+          const mimes = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp', '.mp4': 'video/mp4' };
+          res.writeHead(200, { 'Content-Type': mimes[ext] || 'application/octet-stream', 'Content-Length': buf.length, 'Cache-Control': 'public, max-age=86400' });
+          return res.end(buf);
+        }catch{}
+      }
+      try{const m=await readMedia(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,relName);res.writeHead(200,{'Content-Type':m.mime,'Content-Length':m.buffer.length,'Cache-Control':'private, max-age=3600'});return res.end(m.buffer)}catch{return json(res,404,{error:'Medya bulunamadı.'})}
+    }
     if(p==='/api/ai/health'&&req.method==='GET')return json(res,200,await checkAiHealth(integrations.ai()));
     if(p==='/api/ai/image'&&req.method==='POST'){const b=await body(req);const config=integrations.ai();const image=await generateImage(config,{prompt:b.prompt});return json(res,201,await materializeImage(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,image,config))}
     if(p==='/api/workspace' && req.method==='GET') return json(res,200,{...store.read(), connection:{configured:integrations.public().accounts.some(a=>a.configured),verified:integrations.public().accounts.some(a=>a.verified),publishing:integrations.public().accounts.some(a=>a.publishing)},integrations:integrations.public(), mode:'local'});

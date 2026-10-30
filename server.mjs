@@ -13,26 +13,29 @@ import { createScheduler } from './scheduler.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4317);
-const store = await createStore(process.env.SOCIALDESK_DATA_DIR || path.join(root,'data'));
-const integrations=await createIntegrations(process.env.SOCIALDESK_DATA_DIR || path.join(root,'data'));
+const defaultDataDir = process.env.VERCEL ? '/tmp/socialdesk-data' : path.join(root,'data');
+const store = await createStore(process.env.SOCIALDESK_DATA_DIR || defaultDataDir);
+const integrations=await createIntegrations(process.env.SOCIALDESK_DATA_DIR || defaultDataDir);
 function canPublish(id){try{const a=integrations.account(id);return Boolean(a.verifiedAt&&a.publishing)}catch{return false}}
 const json = (res, code, value) => {res.writeHead(code, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(value));};
 async function body(req) { let s=''; for await (const c of req) {s+=c; if (Buffer.byteLength(s)>200000) throw new Error('İstek çok büyük.');} return JSON.parse(s || '{}'); }
 function validUrl(value) { const u=new URL(value); if(u.protocol!=='https:' || !['instagram.com','www.instagram.com'].includes(u.hostname) || !/^\/(p|reel)\/[\w-]+\/?$/.test(u.pathname)) throw new Error('Instagram gönderi veya Reels bağlantısı girin.'); return u.origin+u.pathname; }
 const server = http.createServer(async(req,res)=>{
-  const allowedHost = [`127.0.0.1:${port}`,`localhost:${port}`];
-  if(!allowedHost.includes(req.headers.host)) return json(res,403,{error:'Yerel erişim gerekli.'});
-  if(req.headers.origin && ![`http://127.0.0.1:${port}`,`http://localhost:${port}`].includes(req.headers.origin)) return json(res,403,{error:'Kaynak izinli değil.'});
+  if(!process.env.VERCEL){
+    const allowedHost = [`127.0.0.1:${port}`,`localhost:${port}`];
+    if(!allowedHost.includes(req.headers.host)) return json(res,403,{error:'Yerel erişim gerekli.'});
+    if(req.headers.origin && ![`http://127.0.0.1:${port}`,`http://localhost:${port}`].includes(req.headers.origin)) return json(res,403,{error:'Kaynak izinli değil.'});
+  }
   if(req.headers['sec-fetch-site']==='cross-site')return json(res,403,{error:'Kaynak izinli değil.'});
   if(['POST','PUT','DELETE'].includes(req.method)&&req.headers['content-type']&&!req.headers['content-type'].startsWith('application/json')&&req.url!=='/api/media')return json(res,415,{error:'JSON istek gerekli.'});
   res.setHeader('X-Content-Type-Options','nosniff');
   res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http://167.233.201.31:3456 https://media.167.233.201.31.nip.io; media-src 'self' blob: https: http://167.233.201.31:3456 https://media.167.233.201.31.nip.io; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
   try {
     const url=new URL(req.url,'http://localhost'); const p=url.pathname;
-    if(p==='/api/media'&&req.method==='POST'){let bytes=0;const chunks=[];for await(const c of req){bytes+=c.length;if(bytes>50*1024*1024)throw Error('Dosya en fazla 50 MB olabilir.');chunks.push(c)}return json(res,201,await saveMedia(process.env.SOCIALDESK_DATA_DIR||path.join(root,'data'),Buffer.concat(chunks)))}
-    if(p.startsWith('/media/')&&req.method==='GET'){try{const m=await readMedia(process.env.SOCIALDESK_DATA_DIR||path.join(root,'data'),p.slice(7));res.writeHead(200,{'Content-Type':m.mime,'Content-Length':m.buffer.length,'Cache-Control':'private, max-age=3600'});return res.end(m.buffer)}catch{return json(res,404,{error:'Medya bulunamadı.'})}}
+    if(p==='/api/media'&&req.method==='POST'){let bytes=0;const chunks=[];for await(const c of req){bytes+=c.length;if(bytes>50*1024*1024)throw Error('Dosya en fazla 50 MB olabilir.');chunks.push(c)}return json(res,201,await saveMedia(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,Buffer.concat(chunks)))}
+    if(p.startsWith('/media/')&&req.method==='GET'){try{const m=await readMedia(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,p.slice(7));res.writeHead(200,{'Content-Type':m.mime,'Content-Length':m.buffer.length,'Cache-Control':'private, max-age=3600'});return res.end(m.buffer)}catch{return json(res,404,{error:'Medya bulunamadı.'})}}
     if(p==='/api/ai/health'&&req.method==='GET')return json(res,200,await checkAiHealth(integrations.ai()));
-    if(p==='/api/ai/image'&&req.method==='POST'){const b=await body(req);const config=integrations.ai();const image=await generateImage(config,{prompt:b.prompt});return json(res,201,await materializeImage(process.env.SOCIALDESK_DATA_DIR||path.join(root,'data'),image,config))}
+    if(p==='/api/ai/image'&&req.method==='POST'){const b=await body(req);const config=integrations.ai();const image=await generateImage(config,{prompt:b.prompt});return json(res,201,await materializeImage(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,image,config))}
     if(p==='/api/workspace' && req.method==='GET') return json(res,200,{...store.read(), connection:{configured:integrations.public().accounts.some(a=>a.configured),verified:integrations.public().accounts.some(a=>a.verified),publishing:integrations.public().accounts.some(a=>a.publishing)},integrations:integrations.public(), mode:'local'});
     if(p==='/api/posts' && req.method==='POST') {
       const input=await body(req); const post=validatePost(input);
@@ -76,4 +79,9 @@ const server = http.createServer(async(req,res)=>{
 const scheduler=createScheduler(store,integrations);
 await scheduler.recover();
 const timer=setInterval(()=>scheduler.runOnce().catch(()=>console.error('Zamanlayıcı durumu kaydedilemedi.')),15000);timer.unref();
-server.listen(port,'127.0.0.1',()=>console.log(`Socialdesk: http://127.0.0.1:${port}`));
+
+if(!process.env.VERCEL) {
+  server.listen(port,'127.0.0.1',()=>console.log(`Socialdesk: http://127.0.0.1:${port}`));
+}
+
+export default server;

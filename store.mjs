@@ -23,11 +23,25 @@ export function validatePost(input, existing = {}) {
   if (status === 'scheduled' && !mediaUrl) throw new Error('Otomatik paylaşım için herkese açık medya URL’si gerekli.');
   return { ...existing, id: existing.id || randomUUID(), title, caption, kind, status, localMediaUrl, requestId:String(existing.requestId||input.requestId||'').slice(0,100), accountId:String(input.accountId ?? existing.accountId ?? ''), scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null, mediaUrl, theme: ['forest','mint','paper'].includes(input.theme ?? existing.theme) ? (input.theme ?? existing.theme) : 'forest', updatedAt: new Date().toISOString(), createdAt: existing.createdAt || new Date().toISOString() };
 }
-export async function createStore(dir) {
+export async function createStore(dir, { seed = false } = {}) {
   await mkdir(dir, {recursive:true});
   const file = path.join(dir, 'workspace.json');
   let db;
-  try { db = JSON.parse(await readFile(file, 'utf8')); } catch (e) { if (e.code !== 'ENOENT') throw e; db = {posts:[], opportunities:[], brand:{name:'Benim markam', handle:'', sector:'', audience:'', tone:'Samimi ve net'}, events:[]}; }
+  try {
+    db = JSON.parse(await readFile(file, 'utf8'));
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e;
+    if (seed) {
+      try {
+        const seedFile = path.join(ROOT, 'data', 'workspace.json');
+        db = JSON.parse(await readFile(seedFile, 'utf8'));
+      } catch {
+        db = {posts:[], opportunities:[], brand:{name:'Benim markam', handle:'', sector:'', audience:'', tone:'Samimi ve net'}, events:[]};
+      }
+    } else {
+      db = {posts:[], opportunities:[], brand:{name:'Benim markam', handle:'', sector:'', audience:'', tone:'Samimi ve net'}, events:[]};
+    }
+  }
   // A single process owns the store. Queue mutations and atomically replace the file.
   let queue = Promise.resolve();
   async function mutate(fn) {

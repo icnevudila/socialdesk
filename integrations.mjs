@@ -21,7 +21,7 @@ export async function createIntegrations(dir){
  }
  let queue=Promise.resolve();
  async function mutate(fn){const task=queue.then(async()=>{const next=structuredClone(data);const out=fn(next);await writeFile(file+'.tmp',JSON.stringify(next,null,2),{mode:0o600});await rename(file+'.tmp',file);data=next;return out});queue=task.catch(()=>{});return task}
- const account=id=>{const a=data.accounts.find(a=>a.id===id);if(!a)throw Error('Instagram hesabını seçin.');return structuredClone(a)};
+ const account=id=>{let a=data.accounts.find(a=>a.id===id);if(!a&&data.accounts.length===1)a=data.accounts[0];if(!a)throw Error('Instagram hesabını seçin.');return structuredClone(a)};
  const publicAccount=a=>({id:a.id,label:a.label,userId:String(a.userId||'').trim(),version:String(a.version||'').trim(),configured:Boolean(a.token&&a.userId&&/^v\d+\.\d+$/.test(String(a.version||'').trim())),verified:Boolean(a.verifiedAt),verifiedAt:a.verifiedAt||null,username:a.username||'',publishing:Boolean(a.publishing&&a.verifiedAt),hasToken:Boolean(a.token)});
  const defaultBaseUrl=((process.env.OMNISTUDIO_GATEWAY_URL?(process.env.OMNISTUDIO_GATEWAY_URL.trim().replace(/\/+$/,'')+'/v1'):'')||process.env.OPENAI_BASE_URL||'http://167.233.201.31:3456/v1').trim();
  const defaultKey=(process.env.CHATGPT_API_KEY||process.env.OMNISTUDIO_GATEWAY_TOKEN||process.env.OPENAI_API_KEY||'').trim();

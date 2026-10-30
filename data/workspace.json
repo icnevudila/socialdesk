@@ -1,0 +1,145 @@
+{
+  "posts": [
+    {
+      "id": "8eabc71e-173c-4e65-af57-7a2096883eaa",
+      "title": "Kadıköy İşletme ve Lokasyon Analizi",
+      "caption": "Kadıköy genelinde yeme-içme ve hizmet sektörünün mahalle bazlı yoğunluk dağılımı. Yeni bir şube açarken veya lokasyon seçerken cadde ölçeğindeki sektörel verileri analiz etmek riskleri minimize eder.\n\nHarita üzerinde gerçek işletme dağılımını incelemek için Veriburada lokasyon zekâsından yararlanabilirsiniz.\n\n#kadıköy #yerelişletme #lokasyonanalizi #verianalitiği #işletmegeliştirme",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-01T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/kadikoy-veri-haritasi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.429Z"
+    },
+    {
+      "id": "98dc8005-d9d7-4d5b-b74f-9d8fbdbe5513",
+      "title": "Ankara Çankaya Ticari Yoğunluk Verisi",
+      "caption": "Çankaya bölgesinde ticari işletmelerin kümelenme noktaları ve sektörel dağılımı. Hangi bölgede hangi hizmete ihtiyaç olduğunu tahminlere değil, sahadan doğrulanmış güncel verilere dayandırarak değerlendirin.\n\n#ankara #çankaya #ticariveri #lokasyon #büyümestratejisi",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-02T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/cankaya-veri-haritasi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "04aa1579-234d-495d-bf10-e908a954c5d3",
+      "title": "İzmir Alsancak Hizmet ve Perakende Dağılımı",
+      "caption": "Alsancak genelinde ticari hareketliliğin yoğunlaştığı akslar. Bölgedeki rekabet haritasını ve işletme yoğunluğunu tek ekranda inceleyerek doğru kararlar alın.\n\n#izmir #alsancak #perakende #haritaanalizi #veriburada",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-03T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/alsancak-veri-haritasi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "eb3b1186-0d1d-4e8b-9fb6-761036eee927",
+      "title": "Bursa Nilüfer Gelişim ve İşletme Haritası",
+      "caption": "Nilüfer'de hızla büyüyen yerleşim alanları ve ticari noktaların analizi. Bölgesel büyüme trendlerini ve potansiyel fırsatları harita tabanlı veriyle keşfedin.\n\n#bursa #nilüfer #şehirplanlama #yatırım #verianalizi",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-04T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/nilufer-veri-haritasi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "655bdc60-82a4-4988-acec-8ea9c14c6fa0",
+      "title": "Mimarlık ve Yapı Sektöründe Lokasyon Verisi",
+      "caption": "Proje geliştirme sürecinde çevresel işletme dokusu ve kentsel fonksiyonların tespiti. Doğru mimari ve kentsel kararlar için bölgesel verileri entegre biçimde inceleyin.\n\n#mimarlık #proje #kentselveri #şehircilik #yapı",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-05T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/mimarlik-ve-yapi-analizi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "0d00ecb2-bdec-4f67-ac48-32c3f8fbac6d",
+      "title": "Gastronomi ve Yeme-İçme Sektöründe Bölgesel Veri",
+      "caption": "Restoran ve kafe yatırımlarında en kritik adım: doğru lokasyon seçimi. Bölgedeki mevcut işletmelerin dağılımı, yaya aksları ve sektörel doygunluk oranları başarıyı doğrudan etkiler.\n\n#gastronomi #restoran #kafe #işletmeyönetimi #lokasyonseçimi",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-06T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/yeme-icme-lokasyon-verisi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "40e49b2a-60bd-4d4a-aae5-b29207d600d6",
+      "title": "Ticari Gayrimenkul ve Ofis Dağılım Analitiği",
+      "caption": "Ofis ve çalışma alanlarının merkez ilçelerdeki yoğunluğu. Kurumsal firmaların lokasyon tercihleri ve ulaşım akslarına yakınlık verilerini harita üzerinden değerlendirin.\n\n#ticariemlak #ofis #gayrimenkul #işdünyası #analiz",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-07T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/ticari-gayrimenkul-ofis-verisi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "45f6c57a-63ff-470f-82d3-43933acb0331",
+      "title": "Restoran ve Kafe Sektöründe Rekabet Haritası",
+      "caption": "Bölgenizdeki rakip yoğunluğunu ve müşteri profilini net verilerle analiz edin. Tahminlere güvenmek yerine doğrulanmış lokasyon zekâsıyla hareket edin.\n\n#sektöranalizi #rakipanalizi #işletme #veriburada #strateji",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-08T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/restoran-ve-kafe-sektor-analizi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "388ac0cc-e668-4a5a-8c62-5a9f16640ab2",
+      "title": "İstanbul Genelinde Sektörel Dağılım Haritası",
+      "caption": "İstanbul'un 39 ilçesinde işletmelerin coğrafi dağılımı ve sektörel yoğunluk haritası. Şehrin ticari nabzını veriyle takip edin.\n\n#istanbul #harita #büyükşehir #ekonomi #veri",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-09T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/istanbul-isletme-haritasi.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "adc1ef26-d27c-459f-9b66-8c32d2290f36",
+      "title": "Veriburada: Şehrin Ticari Zekâsı Tek Haritada",
+      "caption": "İşletmeniz için doğru konumu seçmek, bölgesel pazar araştırması yapmak ve sektörel verileri görselleştirmek artık çok daha hızlı. Harita tabanlı lokasyon analitiği Veriburada'da.\n\n#veriburada #yerelveri #işletmeanalizi #haritazekası #türkiye",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-10T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/veriburada-platform-tanitim.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    },
+    {
+      "id": "558a76a2-e773-47eb-908f-826973ba6155",
+      "title": "Kentsel Doku ve İşletme Ekosistemi",
+      "caption": "Şehirler sadece binalardan ibaret değildir; yaşayan işletmeler, hizmet ağları ve insan hareketliliğinin bütünüdür. Veriburada bu ekosistemi harita üzerinde anlamlandırır.\n\n#şehir #kentselvizyon #veri #lokasyon #topluluk",
+      "kind": "image",
+      "status": "scheduled",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "scheduledAt": "2026-11-11T11:30:00.000Z",
+      "mediaUrl": "https://socialdesk-sage.vercel.app/media/istanbul-sehir-diorama.jpg",
+      "theme": "forest",
+      "createdAt": "2026-10-30T21:25:47.432Z"
+    }
+  ],
+  "opportunities": [],
+  "brand": {
+    "name": "Veriburada",
+    "handle": "veriburada",
+    "sector": "Yerel İşletme ve Lokasyon Veri Analitiği",
+    "audience": "İşletme sahipleri, mimarlar, girişimciler ve şehir analistleri",
+    "tone": "Net, profesyonel, yapay zekâ kokmayan doğal kurumsal dil"
+  },
+  "events": []
+}

@@ -14,7 +14,7 @@ import { createScheduler } from './scheduler.mjs';
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4317);
 const defaultDataDir = process.env.VERCEL ? '/tmp/socialdesk-data' : path.join(root,'data');
-const store = await createStore(process.env.SOCIALDESK_DATA_DIR || defaultDataDir);
+const store = await createStore(process.env.SOCIALDESK_DATA_DIR || defaultDataDir, { seed: Boolean(process.env.VERCEL) });
 const integrations=await createIntegrations(process.env.SOCIALDESK_DATA_DIR || defaultDataDir);
 function canPublish(id){try{const a=integrations.account(id);return Boolean(a.verifiedAt&&a.publishing)}catch{return false}}
 const json = (res, code, value) => {res.writeHead(code, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(value));};

@@ -1,0 +1,40 @@
+name: Socialdesk 24/7 Instagram Büyüme Botu
+
+on:
+  schedule:
+    # Her 3 saatte bir otomatik çalışır (İstanbul saatiyle aktif saatlerde)
+    - cron: '0 6,9,12,15,18,21 * * *'
+  workflow_dispatch: # GitHub arayüzünden tek tıkla elle çalıştırma butonu
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu Klonla
+        uses: actions/checkout@v4
+
+      - name: Python Ortamını Kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Bağımlılıkları Yükle
+        run: |
+          pip install instagrapi pillow requests
+
+      - name: Instagram Oturumunu Yapılandır ve Keşif / Etkileşim Başlat
+        env:
+          IG_SESSIONID: ${{ secrets.IG_SESSIONID || '51449058525%3AkLQ2DZtrWwUPEr%3A2%3AAYlYl0uT-LqTpKZqkFTl1YfsZEzSFsYDaTqYNaoDVw' }}
+          IG_USERNAME: 'veriburada'
+          IG_PASSWORD: ${{ secrets.IG_PASSWORD || 'veriburada123@' }}
+        run: |
+          echo "=== Socialdesk 24/7 Otomasyonu Başlatılıyor ==="
+          mkdir -p data
+          python scripts/private_cli.py login --sessionid "$IG_SESSIONID" || python scripts/private_cli.py login --username "$IG_USERNAME" --password "$IG_PASSWORD"
+          
+          # Hedef hashtaglerde keşif ve otomatik etkileşim
+          TAGS=("isletme" "esnaf" "kafe" "dukkan" "girisimcilik")
+          SELECTED_TAG=${TAGS[$RANDOM % ${#TAGS[@]}]}
+          echo "Seçilen Hedef Hashtag: #$SELECTED_TAG"
+          python scripts/private_cli.py discover --tag "$SELECTED_TAG"

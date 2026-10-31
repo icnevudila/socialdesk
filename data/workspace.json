@@ -814,14 +814,42 @@
     "enabled": true,
     "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
     "hashtags": [
-      "verianalizi",
-      "esnaf",
       "isletme",
-      "yerelrehber",
-      "girisimcilik"
+      "esnaf",
+      "kafe",
+      "dukkan",
+      "mimaritasarim",
+      "girisimcilik",
+      "lokasyon",
+      "istanbulisletmeleri"
     ],
-    "minRelevance": 85,
+    "minRelevance": 80,
     "maxCommentsPerDay": 2,
-    "autoSend": true
+    "autoSend": true,
+    "autoLike": true,
+    "viewStories": true,
+    "nightSleep": true
+  },
+  "growth": {
+    "enabled": true,
+    "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+    "topics": [
+      "Yerel İşletmeler İçin Lokasyon Analizi",
+      "Doğru Bölgede Doğru Müşteri Kitlesi",
+      "Saha ve Harita Verisiyle İş Geliştirme",
+      "Şehrinizdeki Yeni İşletmeleri Keşfedin"
+    ],
+    "weekdays": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "publishAt": "13:00",
+    "prepareAt": "09:00",
+    "autoImages": false,
+    "autoQueue": false,
+    "mediaSources": []
   }
 }

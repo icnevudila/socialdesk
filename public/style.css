@@ -152,3 +152,19 @@
   border-left: 3px solid #a394b3 !important;
 }
 
+/* Brand Avatar Logo Box */
+.avatar.brand-avatar-box {
+  background: #ffffff !important;
+  border: 1px solid var(--line);
+  padding: 2px !important;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.brand-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 6px;
+  display: block;
+}
+

@@ -5,7 +5,7 @@ import {existsSync} from 'node:fs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 
 export async function privateCall(action,values={},options={}){
- if(!['check','discover','comment','identity','publish'].includes(action))throw Error('Desteklenmeyen işlem.');
+ if(!['check','discover','comment','like','follow','identity','publish'].includes(action))throw Error('Desteklenmeyen işlem.');
  const dir=options.dataDir||process.env.SOCIALDESK_DATA_DIR||path.join(root,'data');
  const python=options.pythonBin??[process.env.PYTHON_BIN,path.join(root,'.venv',process.platform==='win32'?'Scripts/python.exe':'bin/python')].find(p=>p&&existsSync(p));
  if(!python||process.env.VERCEL){if(action==='check')return {installed:false,available:false,sessionSaved:false,version:null,mode:'unavailable'};throw Error('Özel Instagram API ortamı bu sunucuda kurulu değil. Manuel inceleme listesini kullanabilirsiniz.')}
@@ -15,7 +15,8 @@ export async function privateCall(action,values={},options={}){
 
  const args=[path.join(root,'scripts/private_cli.py'),action];
  if(action==='discover')args.push('--tag',String(values.tag));
- if(action==='comment')args.push('--url',String(values.url));
+ if(action==='comment'||action==='like')args.push('--url',String(values.url));
+ if(action==='follow')args.push('--username',String(values.username));
  if(action==='publish'){
    if(values.url)args.push('--url',String(values.url));
    if(values.file)args.push('--file',String(values.file));
@@ -33,6 +34,8 @@ export async function privateCall(action,values={},options={}){
      const data=JSON.parse(output.trim());
      if(code||data.error)throw Error(data.error||'Instagram özel API isteği başarısız.');
      if(action==='comment'&&(!data.id||data.accepted!==true))throw Error('Instagram yorum sonucu doğrulanamadı.');
+     if(action==='like'&&!data.liked)throw Error('Instagram beğeni işlemi başarısız.');
+     if(action==='follow'&&!data.followed)throw Error('Instagram takip işlemi başarısız.');
      if(action==='discover'&&!Array.isArray(data.items))throw Error('Instagram keşif yanıtı okunamadı.');
      if(action==='publish'&&(!data.id||!data.published))throw Error('Instagram yayın sonucu doğrulanamadı.');
      finish(null,data);

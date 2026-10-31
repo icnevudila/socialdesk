@@ -15,7 +15,7 @@ SESSION=DATA/'private-session.json'
 
 def run():
  parser=argparse.ArgumentParser()
- parser.add_argument('action',choices=['check','login','discover','comment','identity','publish'])
+ parser.add_argument('action',choices=['check','login','discover','comment','like','follow','identity','publish'])
  parser.add_argument('--tag',default='')
  parser.add_argument('--url',default='')
  parser.add_argument('--file',default='')
@@ -126,6 +126,16 @@ def run():
   result=client.media_comment(media_id,message)
   if not getattr(result,'pk',None):raise ValueError('Instagram yorum kimliği dönmedi. Sonuç belirsiz; tekrar göndermeden önce kontrol edin.')
   return {'id':str(result.pk),'accepted':True,'source':'instagram-private-api'}
+ if args.action=='like':
+  if not args.url: raise ValueError('Beğenilecek gönderi adresi gerekli.')
+  media_id=client.media_pk_from_url(args.url)
+  liked=client.media_like(media_id)
+  return {'liked':bool(liked),'media_pk':str(media_id),'source':'instagram-private-api'}
+ if args.action=='follow':
+  if not args.username: raise ValueError('Takip edilecek kullanıcı adı gerekli.')
+  user_id=client.user_id_from_username(args.username.lstrip('@'))
+  followed=client.user_follow(user_id)
+  return {'followed':bool(followed),'user_pk':str(user_id),'source':'instagram-private-api'}
  if args.action=='publish':
   caption = ''
   if not sys.stdin.isatty():

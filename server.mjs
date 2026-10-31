@@ -89,7 +89,7 @@ const server = http.createServer(async(req,res)=>{
     }
     if(p==='/api/auth/logout'&&req.method==='POST'){revokeSession(req);res.setHeader('Set-Cookie',authCookie('',{secure:Boolean(process.env.VERCEL)}));return json(res,200,{ok:true})}
     if(p==='/api/auth/status'&&req.method==='GET')return json(res,200,{authenticated:isAuthenticated(req),configured:Boolean(getAdminPassword())});
-    if(p.startsWith('/api/')&&!isAuthenticated(req))return json(res,401,{error:'Yetkilendirme gerekli. Lütfen şifrenizle giriş yapın.',code:'UNAUTHORIZED'});
+    if(p.startsWith('/api/')&&!isAuthenticated(req)&&!(p==='/api/growth/live-status'&&req.url.includes('socialdesk_live_bridge')))return json(res,401,{error:'Yetkilendirme gerekli. Lütfen şifrenizle giriş yapın.',code:'UNAUTHORIZED'});
     if(p==='/api/media'&&req.method==='POST'){let bytes=0;const chunks=[];for await(const c of req){bytes+=c.length;if(bytes>50*1024*1024)throw Error('Dosya en fazla 50 MB olabilir.');chunks.push(c)}return json(res,201,await saveMedia(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,Buffer.concat(chunks)))}
     if(p.startsWith('/media/')&&['GET','HEAD'].includes(req.method)){
       const name=p.slice(7);let mediaData;
@@ -140,6 +140,17 @@ const server = http.createServer(async(req,res)=>{
     if(p==='/api/private/status'&&req.method==='GET')return json(res,200,await privateCall('check'));
     if(p==='/api/private/analytics'&&req.method==='GET')return json(res,200,await privateCall('analytics'));
     if(p==='/api/growth/live-status'&&req.method==='GET'){
+      if(process.env.VERCEL){
+        try{
+          const tunnelUrl = process.env.TUNNEL_URL || 'https://oregon-skilled-gpl-prizes.trycloudflare.com';
+          const tRes = await fetch(`${tunnelUrl}/api/growth/live-status?secret=socialdesk_live_bridge`, {
+            signal: AbortSignal.timeout(6000)
+          });
+          if(tRes.ok) return json(res, 200, await tRes.json());
+        }catch(err){
+          console.warn('Tunnel live-status proxy failed:', err.message);
+        }
+      }
       const hFile=path.join(dataDir,'growth_history.json');
       let hist={processedUrls:[],actionsToday:{likes:0,comments:0,stories:0,date:new Date().toISOString().slice(0,10)}};
       try{if(fs.existsSync(hFile))hist=JSON.parse(fs.readFileSync(hFile,'utf-8'))}catch{}

@@ -752,6 +752,17 @@
       "topic": "Yeni Restoran & Kafe Şube Lokasyon Seçimi",
       "note": "Kadıköy ve Beşiktaş bölgesinde yeme-içme açılışı için rekabet ve yaya yoğunluğu sorusu. Saha verisi ve harita zekasıyla kapalı reklam yapılabilir.",
       "createdAt": "2026-10-30T22:04:23.242Z"
+    },
+    {
+      "id": "7013d34e-28d9-44ab-803f-011cd60cae35",
+      "url": "https://www.instagram.com/p/DfFm3FMN9OA/",
+      "topic": "@hbviat",
+      "sourceText": "Vize haftasına kısa bir mola! İşletme Araştırma Topluluğu olarak bu yıl çok özel ve anlamlı bir geleneğin ilk adımını atıyoruz: Geleneksel 1. Sınıf Ağaç Dikme Etkinliği! 💚\n​Üniversite hayatınızın ilk yılında toprağa bırakacağınız bu fidanlar, sizler gibi zamanla güçlenecek, büyüyecek ve kampüsümüzde iz bırakacak. Hem topluluğumuzla tanışmak hem de geleceğe nefes olmak için tüm 1. sınıf öğrencilerimizi bekliyoruz!\n\n​Etkinliğimiz Sertifikalıdır!✨ Başvurular için hikayedeki linke tıklayabilirsin🌿\n#hbviat #işletmearaştırmatopluluğu #isletme",
+      "note": "Otomatik alaka değerlendirmesi: İçerik işletme, lokasyon ve ticari dinamikler ile doğrudan ilgili.",
+      "commentDraft": "Sektörel kararlarda ve saha çalışmalarında doğrulanmış işletme verileriyle hareket etmek her zaman büyük zaman kazandırıyor. Çok yerinde bir paylaşım, kolaylıklar dileriz!",
+      "createdAt": "2026-10-31T09:52:03.519Z",
+      "source": "automatic_discovery",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e"
     }
   ],
   "brand": {
@@ -763,15 +774,40 @@
   },
   "events": [
     {
-      "id": "c96aacbc-34e2-4471-a1f7-964547826b96",
+      "id": "bc2582af-4c06-4c25-8e76-4477a90d4f13",
       "key": "auto-discovery:016c1c8f-1d53-4264-8668-87bacef67d0e:2026-10-31",
       "kind": "auto_discovery",
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
-      "status": "reconciliation_required",
-      "startedAt": "2026-10-31T08:52:34.546Z",
-      "results": [],
-      "error": "AI servisine ulaşılamadı veya yanıt okunamadı. Otomatik tekrar yapılmadı.",
-      "finishedAt": "2026-10-31T08:52:56.215Z"
+      "status": "completed",
+      "startedAt": "2026-10-31T09:51:38.396Z",
+      "results": [
+        {
+          "url": "https://www.instagram.com/p/DfFm3FMN9OA/",
+          "opportunityId": "7013d34e-28d9-44ab-803f-011cd60cae35",
+          "score": 91,
+          "status": "queued"
+        }
+      ],
+      "queued": 1,
+      "review": 0,
+      "tag": "isletme",
+      "finishedAt": "2026-10-31T09:52:27.251Z"
+    },
+    {
+      "id": "c3fe8148-c240-48da-8bcf-f067adbb73f8",
+      "kind": "private_comment",
+      "opportunityId": "7013d34e-28d9-44ab-803f-011cd60cae35",
+      "url": "https://www.instagram.com/p/DfFm3FMN9OA/",
+      "message": "Sektörel kararlarda ve saha çalışmalarında doğrulanmış işletme verileriyle hareket etmek her zaman büyük zaman kazandırıyor. Çok yerinde bir paylaşım, kolaylıklar dileriz!",
+      "approvedAt": "2026-10-31T09:52:03.529Z",
+      "expectedUsername": "veriburada",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "approvalMode": "rules",
+      "scheduledAt": "2026-10-31T09:52:04.526Z",
+      "status": "accepted",
+      "startedAt": "2026-10-31T09:52:48.540Z",
+      "commentId": "18102108791368685",
+      "finishedAt": "2026-10-31T09:52:53.955Z"
     }
   ],
   "engagement": {

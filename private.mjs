@@ -5,7 +5,7 @@ import {existsSync} from 'node:fs';
 const root=path.dirname(fileURLToPath(import.meta.url));
 
 export async function privateCall(action,values={},options={}){
- if(!['check','discover','comment','like','follow','identity','publish'].includes(action))throw Error('Desteklenmeyen işlem.');
+ if(!['check','discover','comment','like','follow','story','interact','identity','publish'].includes(action))throw Error('Desteklenmeyen işlem.');
  const dir=options.dataDir||process.env.SOCIALDESK_DATA_DIR||path.join(root,'data');
  const python=options.pythonBin??[process.env.PYTHON_BIN,path.join(root,'.venv',process.platform==='win32'?'Scripts/python.exe':'bin/python')].find(p=>p&&existsSync(p));
  if(!python||process.env.VERCEL){if(action==='check')return {installed:false,available:false,sessionSaved:false,version:null,mode:'unavailable'};throw Error('Özel Instagram API ortamı bu sunucuda kurulu değil. Manuel inceleme listesini kullanabilirsiniz.')}
@@ -15,8 +15,8 @@ export async function privateCall(action,values={},options={}){
 
  const args=[path.join(root,'scripts/private_cli.py'),action];
  if(action==='discover')args.push('--tag',String(values.tag));
- if(action==='comment'||action==='like')args.push('--url',String(values.url));
- if(action==='follow')args.push('--username',String(values.username));
+ if(action==='comment'||action==='like'||action==='interact')if(values.url)args.push('--url',String(values.url));
+ if(action==='follow'||action==='story'||action==='interact')if(values.username)args.push('--username',String(values.username));
  if(action==='publish'){
    if(values.url)args.push('--url',String(values.url));
    if(values.file)args.push('--file',String(values.file));

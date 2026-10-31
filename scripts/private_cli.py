@@ -15,7 +15,7 @@ SESSION=DATA/'private-session.json'
 
 def run():
  parser=argparse.ArgumentParser()
- parser.add_argument('action',choices=['check','login','discover','comment','like','follow','identity','publish'])
+ parser.add_argument('action',choices=['check','login','discover','comment','like','follow','story','interact','identity','publish'])
  parser.add_argument('--tag',default='')
  parser.add_argument('--url',default='')
  parser.add_argument('--file',default='')
@@ -136,6 +136,46 @@ def run():
   user_id=client.user_id_from_username(args.username.lstrip('@'))
   followed=client.user_follow(user_id)
   return {'followed':bool(followed),'user_pk':str(user_id),'source':'instagram-private-api'}
+ if args.action=='story':
+  if not args.username: raise ValueError('Hikâyesi izlenecek kullanıcı adı gerekli.')
+  user_id=client.user_id_from_username(args.username.lstrip('@'))
+  stories=client.user_stories(user_id)
+  seen_count = 0
+  if stories:
+   seen=client.story_seen([s.pk for s in stories])
+   seen_count = len(stories) if seen else 0
+  return {'seen': bool(seen_count), 'count': seen_count, 'user_pk': str(user_id), 'source':'instagram-private-api'}
+ if args.action=='interact':
+  results = {}
+  if args.username:
+   try:
+    uid = client.user_id_from_username(args.username.lstrip('@'))
+    sts = client.user_stories(uid)
+    if sts:
+     client.story_seen([s.pk for s in sts])
+     results['story_seen'] = len(sts)
+   except Exception as e:
+    results['story_error'] = str(e)
+  if args.url:
+   mid = client.media_pk_from_url(args.url)
+   try:
+    lk = client.media_like(mid)
+    results['liked'] = bool(lk)
+   except Exception as e:
+    results['like_error'] = str(e)
+   msg = ''
+   if not sys.stdin.isatty():
+    try:
+     data = json.loads(sys.stdin.read() or '{}')
+     msg = str(data.get('message', '')).strip()
+    except Exception:
+     pass
+   if msg:
+    c_res = client.media_comment(mid, msg)
+    if getattr(c_res, 'pk', None):
+     results['comment_id'] = str(c_res.pk)
+     results['comment_accepted'] = True
+  return {'success': True, 'results': results, 'source': 'instagram-private-api'}
  if args.action=='publish':
   caption = ''
   if not sys.stdin.isatty():

@@ -6,21 +6,34 @@ ROOT=Path(__file__).resolve().parent.parent
 DATA=Path(os.environ.get('SOCIALDESK_DATA_DIR',str(ROOT/'data')))
 SESSION=DATA/'private-session.json'
 def run():
- parser=argparse.ArgumentParser();parser.add_argument('action',choices=['check','login','discover','comment','identity']);parser.add_argument('--tag',default='');parser.add_argument('--url',default='');args=parser.parse_args()
+ parser=argparse.ArgumentParser()
+ parser.add_argument('action',choices=['check','login','discover','comment','identity'])
+ parser.add_argument('--tag',default='')
+ parser.add_argument('--url',default='')
+ parser.add_argument('--username',default='')
+ parser.add_argument('--password',default='')
+ parser.add_argument('--code',default='')
+ args=parser.parse_args()
  from instagrapi import Client
  if args.action=='check':
   return {'installed':True,'version':version('instagrapi'),'sessionSaved':SESSION.is_file(),'available':SESSION.is_file(),'mode':'private-api'}
  client=Client()
  if args.action=='login':
-  username=input('Instagram username: ').strip();password=getpass.getpass('Instagram password (not saved): ')
+  username=(args.username or os.environ.get('IG_USERNAME') or input('Instagram username: ')).strip()
+  password=args.password or os.environ.get('IG_PASSWORD')
+  if not password:
+   try:password=getpass.getpass('Instagram password (not saved): ')
+   except Exception:password=input('Instagram password (not saved): ')
   if SESSION.is_file():client.load_settings(SESSION)
-  try:client.login(username,password)
+  try:
+   client.login(username,password,verification_code=args.code or None)
   except Exception as e:
    from instagrapi.exceptions import TwoFactorRequired
    if not isinstance(e,TwoFactorRequired):raise
-   code=getpass.getpass('Instagram 2FA code: ');client.login(username,password,verification_code=code)
+   code=args.code or input('Instagram 2FA code: ')
+   client.login(username,password,verification_code=code)
   DATA.mkdir(parents=True,exist_ok=True);client.dump_settings(SESSION)
-  return {'sessionSaved':True,'verified':True}
+  return {'sessionSaved':True,'verified':True,'username':username}
  if not SESSION.is_file():raise ValueError('Özel API oturumu yok. Yerel terminalde scripts/private_cli.py login komutunu çalıştırın.')
  client.load_settings(SESSION)
  if args.action=='identity':

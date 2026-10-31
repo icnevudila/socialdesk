@@ -17,6 +17,7 @@ import { isAuthenticated, getAdminPassword, computeAuthToken, passwordMatches, a
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4317);
+const isCloud = Boolean(process.env.RENDER || process.env.VERCEL || process.env.KOYEB || process.env.CONTAINER || (process.env.NODE_ENV === 'production' && !process.env.LOCAL_DEV));
 const defaultDataDir = process.env.VERCEL ? '/tmp/socialdesk-data' : path.join(root,'data');
 const dataDir=process.env.SOCIALDESK_DATA_DIR||defaultDataDir;
 const durable=!process.env.VERCEL;
@@ -45,10 +46,12 @@ function generateSmartFallback(task, brief, brand){
   return `${cleanBrief}\n\nİşletmenizi büyütürken ve yeni adımlar atarken en güvenilir yol haritası doğrulanmış saha verisidir. ${name} ile doğru lokasyonda doğru adımı atın.\n\nDetaylı analizler ve güncel listeler için: veriburada.com\n\n#veriburada #isletme #lokasyonanalizi #girisimcilik #turkiye`;
 }
 const server = http.createServer(async(req,res)=>{
-  if(!process.env.VERCEL){
+  if(!isCloud){
     const allowedHost = [`127.0.0.1:${port}`,`localhost:${port}`];
     if(!allowedHost.includes(req.headers.host)) return json(res,403,{error:'Yerel erişim gerekli.'});
     if(req.headers.origin && ![`http://127.0.0.1:${port}`,`http://localhost:${port}`].includes(req.headers.origin)) return json(res,403,{error:'Kaynak izinli değil.'});
+  } else if(req.headers.origin){
+    try{if(new URL(req.headers.origin).host!==req.headers.host)return json(res,403,{error:'Kaynak izinli değil.'})}catch{return json(res,403,{error:'Kaynak izinli değil.'})}
   }
   if(process.env.VERCEL&&req.headers.origin){try{if(new URL(req.headers.origin).host!==req.headers.host)return json(res,403,{error:'Kaynak izinli değil.'})}catch{return json(res,403,{error:'Kaynak izinli değil.'})}}
   if(req.headers['sec-fetch-site']==='cross-site')return json(res,403,{error:'Kaynak izinli değil.'});
@@ -154,7 +157,8 @@ if(durable)await scheduler.recover();
 const timer=setInterval(async()=>{try{await scheduler.runOnce();await engagement.runOnce();await planner.runWeeklyOnce();await planner.runOnce();await discovery.runOnce()}catch{console.error('Arka plan işlemi tamamlanamadı. Çalışma alanı durumunu kontrol edin.')}},15000);timer.unref();
 
 if(!process.env.VERCEL) {
-  server.listen(port,'127.0.0.1',()=>console.log(`Socialdesk: http://127.0.0.1:${port}`));
+  const host = isCloud ? '0.0.0.0' : '127.0.0.1';
+  server.listen(port,host,()=>console.log(`Socialdesk: http://${host}:${port}`));
 }
 
 server.on('error',()=>releaseDataLease());

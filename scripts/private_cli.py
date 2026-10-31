@@ -15,9 +15,11 @@ SESSION=DATA/'private-session.json'
 
 def run():
  parser=argparse.ArgumentParser()
- parser.add_argument('action',choices=['check','login','discover','comment','identity'])
+ parser.add_argument('action',choices=['check','login','discover','comment','identity','publish'])
  parser.add_argument('--tag',default='')
  parser.add_argument('--url',default='')
+ parser.add_argument('--file',default='')
+ parser.add_argument('--caption',default='')
  parser.add_argument('--username',default='')
  parser.add_argument('--password',default='')
  parser.add_argument('--code',default='')
@@ -123,6 +125,37 @@ def run():
  result=client.media_comment(media_id,message)
  if not getattr(result,'pk',None):raise ValueError('Instagram yorum kimliği dönmedi. Sonuç belirsiz; tekrar göndermeden önce kontrol edin.')
  return {'id':str(result.pk),'accepted':True,'source':'instagram-private-api'}
+ if args.action=='publish':
+  caption = ''
+  if not sys.stdin.isatty():
+   try:
+    payload = json.loads(sys.stdin.read() or '{}')
+    caption = payload.get('caption', '')
+   except Exception:
+    pass
+  if not caption:
+   caption = args.caption or ''
+  file_path = args.file
+  if not file_path and args.url:
+   if '/media/' in args.url:
+    fname = args.url.split('/media/')[-1].split('?')[0]
+    c1 = ROOT / 'public' / 'media' / fname
+    c2 = DATA / 'media' / fname
+    if c1.is_file(): file_path = str(c1)
+    elif c2.is_file(): file_path = str(c2)
+   if not file_path:
+    import urllib.request, tempfile
+    ext = '.jpg'
+    tmp = tempfile.NamedTemporaryFile(suffix=ext, delete=False)
+    urllib.request.urlretrieve(args.url, tmp.name)
+    file_path = tmp.name
+  if not file_path or not Path(file_path).is_file():
+   raise ValueError('Paylaşılacak görsel dosyası bulunamadı.')
+  media = client.photo_upload(file_path, caption)
+  if not getattr(media, 'pk', None):
+   raise ValueError('Görsel paylaşıldı ancak Instagram yanıtı doğrulanamadı.')
+  code = getattr(media, 'code', str(media.pk))
+  return {'id':str(media.pk), 'code':code, 'permalink':f'https://www.instagram.com/p/{code}/', 'published':True, 'source':'instagram-private-api'}
 if __name__=='__main__':
  try:print(json.dumps(run(),ensure_ascii=False))
  except Exception as e:

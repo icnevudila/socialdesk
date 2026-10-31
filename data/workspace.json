@@ -5,12 +5,14 @@
       "title": "Bir Şehir, Binlerce Olasılık",
       "caption": "Bir şehirde binlerce işletme ve keşfedilmeyi bekleyen sayısız ticari fırsat var. İl ve sektör seçerek işletmeleri harita üzerinde araştırabilir, bölgenizdeki pazar yapısını veriburada.com ile saniyeler içinde keşfedebilirsiniz.\n\n#işletmekeşfi #şehiranaliği #lokasyon #veriburada #b2bpazar",
       "kind": "image",
-      "status": "scheduled",
+      "status": "reconciliation_required",
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
       "scheduledAt": "2026-10-31T09:00:00.000Z",
       "mediaUrl": "https://socialdesk-sage.vercel.app/media/01_sehir_ve_kesif.jpg",
       "theme": "forest",
-      "createdAt": "2026-10-30T22:04:23.238Z"
+      "createdAt": "2026-10-30T22:04:23.238Z",
+      "attemptStartedAt": "2026-10-31T09:00:11.860Z",
+      "error": "Meta isteği başarısız (190). İzinleri ve hesap bağlantısını kontrol edin."
     },
     {
       "id": "7dac5ab1-00e5-464a-9cf0-be8791b571b9",

@@ -53,7 +53,6 @@ const server = http.createServer(async(req,res)=>{
     if(p==='/api/auth/logout'&&req.method==='POST'){revokeSession(req);res.setHeader('Set-Cookie',authCookie('',{secure:Boolean(process.env.VERCEL)}));return json(res,200,{ok:true})}
     if(p==='/api/auth/status'&&req.method==='GET')return json(res,200,{authenticated:isAuthenticated(req),configured:Boolean(getAdminPassword())});
     if(p.startsWith('/api/')&&!isAuthenticated(req))return json(res,401,{error:'Yetkilendirme gerekli. Lütfen şifrenizle giriş yapın.',code:'UNAUTHORIZED'});
-    if(!durable&&p.startsWith('/api/')&&['POST','PUT','DELETE'].includes(req.method))return json(res,503,{error:'Bu sunucuda kalıcı veri ve sürekli çalışan worker yok. İşlemi kalıcı Socialdesk sunucusunda yapın.'});
     if(p==='/api/media'&&req.method==='POST'){let bytes=0;const chunks=[];for await(const c of req){bytes+=c.length;if(bytes>50*1024*1024)throw Error('Dosya en fazla 50 MB olabilir.');chunks.push(c)}return json(res,201,await saveMedia(process.env.SOCIALDESK_DATA_DIR||defaultDataDir,Buffer.concat(chunks)))}
     if(p.startsWith('/media/')&&['GET','HEAD'].includes(req.method)){
       const name=p.slice(7);let mediaData;

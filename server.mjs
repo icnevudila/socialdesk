@@ -1,4 +1,5 @@
 import http from 'node:http';
+import fs from 'node:fs';
 import {acquireDataLease} from './data-lease.mjs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -138,6 +139,22 @@ const server = http.createServer(async(req,res)=>{
     if(p==='/api/growth/prepare'&&req.method==='POST'){const b=await body(req);return json(res,200,await planner.runOnce({manual:true,targetDate:b.targetDate}))}
     if(p==='/api/private/status'&&req.method==='GET')return json(res,200,await privateCall('check'));
     if(p==='/api/private/analytics'&&req.method==='GET')return json(res,200,await privateCall('analytics'));
+    if(p==='/api/growth/live-status'&&req.method==='GET'){
+      const hFile=path.join(dataDir,'growth_history.json');
+      let hist={processedUrls:[],actionsToday:{likes:0,comments:0,stories:0,date:new Date().toISOString().slice(0,10)}};
+      try{if(fs.existsSync(hFile))hist=JSON.parse(fs.readFileSync(hFile,'utf-8'))}catch{}
+      const lFile=path.join(dataDir,'growth_daemon.log');
+      let recentLogs=[];
+      try{if(fs.existsSync(lFile)){recentLogs=fs.readFileSync(lFile,'utf-8').trim().split('\n').filter(Boolean).slice(-30).reverse()}}catch{}
+      return json(res,200,{
+        active:true,
+        mode:'Organik İnsan Modu (Human-Paced)',
+        today:hist.actionsToday,
+        maxDaily:{likes:50,stories:40,comments:8},
+        totalProcessed:(hist.processedUrls||[]).length,
+        recentLogs
+      });
+    }
     if(p==='/api/private/discover'&&req.method==='POST')return json(res,200,await privateCall('discover',await body(req)));
     if(p==='/api/private/comment/queue'&&req.method==='POST'){if(!schedulerEnabled)return json(res,409,{error:'Yorum kuyruğu için çalışan zamanlayıcı gerekli.'});return json(res,201,await queueReviewedComment(store,await body(req)))}
     if(p==='/api/private/comment'&&req.method==='POST'){const b=await body(req);if(b.confirmed!==true)throw Error('Yorum için açık onay gerekli.');if(!String(b.message||'').trim()||String(b.message).length>2000)throw Error('Yorum 1–2000 karakter olmalı.');const readiness=await privateCall('check');if(!readiness.installed||!readiness.sessionSaved)return json(res,409,{error:'Özel API oturumu hazır değil. Yorum gönderimi başlatılmadı.'});const opportunity=store.read().opportunities.find(o=>o.id===b.opportunityId);if(!opportunity)throw Error('Önce gönderiyi inceleme listesine kaydedin.');const attempt=await store.mutate(db=>{if(db.events.some(e=>e.kind==='private_comment'&&e.opportunityId===opportunity.id))throw Error('Bu gönderi için bir yorum denemesi var. Instagram sonucunu kontrol edin; tekrar gönderim kapalı.');const event={id:randomUUID(),kind:'private_comment',opportunityId:opportunity.id,status:'processing',startedAt:new Date().toISOString()};db.events.push(event);return event;});try{const result=await privateCall('comment',{url:opportunity.url,message:b.message});await store.mutate(db=>Object.assign(db.events.find(e=>e.id===attempt.id),{status:'accepted',commentId:result.id,finishedAt:new Date().toISOString()}));return json(res,200,result)}catch(e){await store.mutate(db=>Object.assign(db.events.find(e=>e.id===attempt.id),{status:'reconciliation_required',finishedAt:new Date().toISOString()}));throw e}}

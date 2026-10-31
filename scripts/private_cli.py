@@ -205,15 +205,13 @@ def run():
      results['comment_accepted'] = True
   return {'success': True, 'results': results, 'source': 'instagram-private-api'}
  if args.action=='publish':
-  caption = ''
-  if not sys.stdin.isatty():
+  caption = args.caption or ''
+  if not caption and not sys.stdin.isatty():
    try:
     payload = json.loads(sys.stdin.read() or '{}')
     caption = payload.get('caption', '')
    except Exception:
     pass
-  if not caption:
-   caption = args.caption or ''
   file_path = args.file
   if not file_path and args.url:
    if '/media/' in args.url:

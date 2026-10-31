@@ -22,12 +22,47 @@ def run():
  parser.add_argument('--password',default='')
  parser.add_argument('--code',default='')
  parser.add_argument('--sessionid',default='')
+ parser.add_argument('--cookies-file',default='')
+ parser.add_argument('--cookies-json',default='')
  args=parser.parse_args()
  from instagrapi import Client
  if args.action=='check':
   return {'installed':True,'version':version('instagrapi'),'sessionSaved':SESSION.is_file(),'available':SESSION.is_file(),'mode':'private-api'}
  client=Client()
  if args.action=='login':
+  # Check if Cookie-Editor JSON or cookies provided
+  raw_cookies = args.cookies_json
+  if not raw_cookies and args.cookies_file and Path(args.cookies_file).is_file():
+   raw_cookies = Path(args.cookies_file).read_text(encoding='utf-8')
+  if not raw_cookies and (DATA/'cookies.json').is_file():
+   raw_cookies = (DATA/'cookies.json').read_text(encoding='utf-8')
+   
+  if raw_cookies:
+   try:
+    cdata = json.loads(raw_cookies)
+    cookie_dict = {}
+    if isinstance(cdata, list):
+     for item in cdata:
+      if isinstance(item, dict) and 'name' in item and 'value' in item:
+       cookie_dict[item['name']] = item['value']
+    elif isinstance(cdata, dict):
+     cookie_dict = cdata
+    if 'sessionid' in cookie_dict:
+     sid = cookie_dict['sessionid']
+     user_id = cookie_dict.get('ds_user_id') or sid.split('%3A')[0].split(':')[0]
+     client.settings['cookies'] = cookie_dict
+     client.init()
+     client.authorization_data = {
+      'ds_user_id': str(user_id),
+      'sessionid': sid,
+      'should_use_header_over_cookies': True,
+     }
+     DATA.mkdir(parents=True, exist_ok=True)
+     client.dump_settings(SESSION)
+     return {'sessionSaved':True,'verified':True,'username':client.username or 'veriburada','userId':str(user_id)}
+   except Exception as e:
+    raise ValueError(f'Çerez JSON verisi okunamadı: {e}')
+
   if args.sessionid or os.environ.get('IG_SESSIONID'):
    sid = args.sessionid or os.environ.get('IG_SESSIONID')
    client.login_by_sessionid(sid.strip())

@@ -2,9 +2,17 @@
 import argparse, getpass, json, os, sys
 from pathlib import Path
 from importlib.metadata import version
+
+if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
 ROOT=Path(__file__).resolve().parent.parent
 DATA=Path(os.environ.get('SOCIALDESK_DATA_DIR',str(ROOT/'data')))
 SESSION=DATA/'private-session.json'
+
 def run():
  parser=argparse.ArgumentParser()
  parser.add_argument('action',choices=['check','login','discover','comment','identity'])
@@ -13,25 +21,52 @@ def run():
  parser.add_argument('--username',default='')
  parser.add_argument('--password',default='')
  parser.add_argument('--code',default='')
+ parser.add_argument('--sessionid',default='')
  args=parser.parse_args()
  from instagrapi import Client
  if args.action=='check':
   return {'installed':True,'version':version('instagrapi'),'sessionSaved':SESSION.is_file(),'available':SESSION.is_file(),'mode':'private-api'}
  client=Client()
  if args.action=='login':
+  if args.sessionid or os.environ.get('IG_SESSIONID'):
+   sid = args.sessionid or os.environ.get('IG_SESSIONID')
+   client.login_by_sessionid(sid.strip())
+   DATA.mkdir(parents=True,exist_ok=True)
+   client.dump_settings(SESSION)
+   info = client.account_info()
+   return {'sessionSaved':True,'verified':True,'username':info.username}
+
   username=(args.username or os.environ.get('IG_USERNAME') or input('Instagram username: ')).strip()
   password=args.password or os.environ.get('IG_PASSWORD')
   if not password:
    try:password=getpass.getpass('Instagram password (not saved): ')
    except Exception:password=input('Instagram password (not saved): ')
   if SESSION.is_file():client.load_settings(SESSION)
-  try:
-   client.login(username,password,verification_code=args.code or None)
-  except Exception as e:
-   from instagrapi.exceptions import TwoFactorRequired
-   if not isinstance(e,TwoFactorRequired):raise
-   code=args.code or input('Instagram 2FA code: ')
-   client.login(username,password,verification_code=code)
+  
+  # Try CAA bloks login first
+  client.username = username
+  client.password = password
+  outcome = client.bloks_caa_login(verification_code=args.code or '')
+  if not outcome.get('logged_in'):
+   # Check if incorrect password in payload
+   outcome_str = json.dumps(outcome, default=str)
+   if 'Incorrect password' in outcome_str or 'The password you entered is incorrect' in outcome_str:
+    raise ValueError('Girdiğiniz Instagram şifresi hatalı. Lütfen @' + username + ' hesabının gerçek Instagram şifresini kontrol edin.')
+   
+   context = client._extract_two_step_verification_context(outcome)
+   if context:
+    from instagrapi.exceptions import TwoFactorRequired
+    code = args.code or input('Instagram 2FA / Güvenlik Kodu: ')
+    client.login(username, password, verification_code=code)
+   else:
+    # Try legacy login as fallback
+    try:
+     client.login(username, password, verification_code=args.code or None)
+    except Exception as e:
+     from instagrapi.exceptions import ClientNeedsUpgradeError, BadPassword
+     if isinstance(e, BadPassword) or 'needs_upgrade' in str(e).lower():
+      raise ValueError('Instagram giriş hatası: Şifre hatalı olabilir veya Instagram web sessionid ile giriş gerekiyor.')
+     raise
   DATA.mkdir(parents=True,exist_ok=True);client.dump_settings(SESSION)
   return {'sessionSaved':True,'verified':True,'username':username}
  if not SESSION.is_file():raise ValueError('Özel API oturumu yok. Yerel terminalde scripts/private_cli.py login komutunu çalıştırın.')

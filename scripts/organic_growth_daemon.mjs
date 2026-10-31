@@ -2,6 +2,7 @@ import {spawn} from 'node:child_process';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import fs from 'node:fs';
+import http from 'node:http';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(root, '..', 'data');
@@ -51,7 +52,14 @@ function saveHistory(hist) {
 }
 
 function runPython(args, stdinData = null) {
-  const python = path.join(root, '..', '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
+  let python = path.join(root, '..', '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
+  if (!fs.existsSync(python)) {
+    if (fs.existsSync('/home/opc/growth-env/bin/python')) {
+      python = '/home/opc/growth-env/bin/python';
+    } else {
+      python = process.env.PYTHON_BIN || 'python3';
+    }
+  }
   const cli = path.join(root, 'private_cli.py');
   return new Promise((resolve, reject) => {
     const child = spawn(python, [cli, ...args], {
@@ -187,6 +195,82 @@ async function main() {
     log(`Sonraki organik etkileşime kadar bekleniyor: ${delaySec} saniye (~${Math.round(delaySec/60)} dk)...`);
     await sleep(delaySec * 1000);
   }
+}
+
+// Lightweight HTTP server for real-time status API
+const statusPort = Number(process.env.STATUS_PORT || 4318);
+try {
+  const statusServer = http.createServer((req, res) => {
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    if (url.pathname === '/api/growth/live-status' || url.pathname === '/live-status' || url.pathname === '/') {
+      const hist = loadHistory();
+      let recentLogs = [];
+      const actions = [];
+      let nextInSeconds = 240;
+      let nextEstimatedTime = '--:--';
+      const nowTR = new Date().toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      try {
+        if (fs.existsSync(logFile)) {
+          const lines = fs.readFileSync(logFile, 'utf-8').trim().split('\n').filter(Boolean);
+          recentLogs = lines.slice(-30).reverse();
+          for (const line of lines) {
+            const tm = line.match(/^\[(.*?)\]/);
+            const ts = tm ? tm[1] : '';
+            const d = ts ? new Date(ts) : new Date();
+            const timeFormatted = d.toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit' });
+            if (line.includes('✓ Gönderi beğenildi:')) {
+              const um = line.match(/https:\/\/www\.instagram\.com\/p\/[^\/\s]+/);
+              actions.push({ type: 'like', label: 'Beğeni', badgeColor: '#818cf8', icon: '❤️', url: um ? um[0] : '', time: timeFormatted, note: 'İşletme gönderisi beğenildi' });
+            } else if (line.includes('✓ Hikaye izlendi:')) {
+              const userMatch = line.match(/@([a-zA-Z0-9._]+)/);
+              actions.push({ type: 'story', label: 'Hikaye', badgeColor: '#38bdf8', icon: '👁️', user: userMatch ? userMatch[1] : '', time: timeFormatted, note: 'Hikaye izlendi, profil izi bırakıldı' });
+            } else if (line.includes('✓ Yorum paylaşıldı:')) {
+              const cm = line.match(/"(.*?)"/);
+              const um = line.match(/https:\/\/www\.instagram\.com\/p\/[^\/\s]+/);
+              actions.push({ type: 'comment', label: 'Yorum', badgeColor: '#34d399', icon: '💬', text: cm ? cm[1] : '', url: um ? um[0] : '', time: timeFormatted, note: 'Kurumsal değer katan yorum yazıldı' });
+            } else if (line.includes('Sonraki organik etkileşime kadar bekleniyor:')) {
+              const sm = line.match(/(\d+)\s*saniye/);
+              if (sm) {
+                nextInSeconds = parseInt(sm[1]);
+                const nextDate = new Date(d.getTime() + nextInSeconds * 1000);
+                nextEstimatedTime = nextDate.toLocaleTimeString('tr-TR', { timeZone: 'Europe/Istanbul', hour: '2-digit', minute: '2-digit' });
+              }
+            }
+          }
+        }
+      } catch {}
+      res.writeHead(200, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Cache-Control': 'no-store'
+      });
+      return res.end(JSON.stringify({
+        active: true,
+        mode: 'Oracle Cloud 7/24 Daemon (Human-Paced)',
+        today: hist.actionsToday,
+        maxDaily: { likes: 50, stories: 40, comments: 8 },
+        totalProcessed: (hist.processedUrls || []).length,
+        serverTime: nowTR,
+        nextCountdownSeconds: nextInSeconds,
+        nextEstimatedTime,
+        followerStats: {
+          current: 0,
+          target: 1000,
+          progressPct: 0.0,
+          growthVelocity: 'Organik & Güvenli (~5–15 potansiyel işletmeci / gün)'
+        },
+        actions: actions.reverse().slice(0, 25),
+        recentLogs
+      }));
+    }
+    res.writeHead(404);
+    res.end('Not Found');
+  });
+  statusServer.listen(statusPort, '0.0.0.0', () => {
+    log(`Büyüme Durum Sunucusu (HTTP Status Server) port ${statusPort} üzerinde dinliyor.`);
+  });
+} catch (e) {
+  log(`Status sunucusu başlatılamadı: ${e.message}`);
 }
 
 main().catch(e => log('Fatal error: ' + e.message));

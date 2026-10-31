@@ -142,7 +142,7 @@ const server = http.createServer(async(req,res)=>{
     if(p==='/api/growth/live-status'&&req.method==='GET'){
       if(process.env.VERCEL){
         try{
-          const tunnelUrl = process.env.TUNNEL_URL || 'https://oregon-skilled-gpl-prizes.trycloudflare.com';
+          const tunnelUrl = process.env.TUNNEL_URL || 'https://philosophy-thoroughly-aaa-operation.trycloudflare.com';
           const tRes = await fetch(`${tunnelUrl}/api/growth/live-status?secret=socialdesk_live_bridge`, {
             signal: AbortSignal.timeout(6000)
           });
@@ -156,13 +156,56 @@ const server = http.createServer(async(req,res)=>{
       try{if(fs.existsSync(hFile))hist=JSON.parse(fs.readFileSync(hFile,'utf-8'))}catch{}
       const lFile=path.join(dataDir,'growth_daemon.log');
       let recentLogs=[];
-      try{if(fs.existsSync(lFile)){recentLogs=fs.readFileSync(lFile,'utf-8').trim().split('\n').filter(Boolean).slice(-30).reverse()}}catch{}
+      const actions=[];
+      let nextInSeconds=240;
+      let nextEstimatedTime='23:45';
+      const nowTR=new Date().toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      try{
+        if(fs.existsSync(lFile)){
+          const lines=fs.readFileSync(lFile,'utf-8').trim().split('\n').filter(Boolean);
+          recentLogs=lines.slice(-30).reverse();
+          for(const line of lines){
+            const tm=line.match(/^\[(.*?)\]/);
+            const ts=tm?tm[1]:'';
+            const d=ts?new Date(ts):new Date();
+            const timeFormatted=d.toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'});
+            if(line.includes('✓ Gönderi beğenildi:')){
+              const um=line.match(/https:\/\/www\.instagram\.com\/p\/[^\/\s]+/);
+              actions.push({type:'like',label:'Beğeni',badgeColor:'#818cf8',icon:'❤️',url:um?um[0]:'',time:timeFormatted,note:'İşletme gönderisi beğenildi'});
+            }else if(line.includes('✓ Hikaye izlendi:')){
+              const userMatch=line.match(/@([a-zA-Z0-9._]+)/);
+              actions.push({type:'story',label:'Hikaye',badgeColor:'#38bdf8',icon:'👁️',user:userMatch?userMatch[1]:'',time:timeFormatted,note:'Hikaye izlendi, profil izi bırakıldı'});
+            }else if(line.includes('✓ Yorum paylaşıldı:')){
+              const cm=line.match(/"(.*?)"/);
+              const um=line.match(/https:\/\/www\.instagram\.com\/p\/[^\/\s]+/);
+              actions.push({type:'comment',label:'Yorum',badgeColor:'#34d399',icon:'💬',text:cm?cm[1]:'',url:um?um[0]:'',time:timeFormatted,note:'Kurumsal değer katan yorum yazıldı'});
+            }else if(line.includes('Sonraki organik etkileşime kadar bekleniyor:')){
+              const sm=line.match(/(\d+)\s*saniye/);
+              if(sm){
+                nextInSeconds=parseInt(sm[1]);
+                const nextDate=new Date(d.getTime()+nextInSeconds*1000);
+                nextEstimatedTime=nextDate.toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'});
+              }
+            }
+          }
+        }
+      }catch{}
       return json(res,200,{
         active:true,
         mode:'Organik İnsan Modu (Human-Paced)',
         today:hist.actionsToday,
         maxDaily:{likes:50,stories:40,comments:8},
         totalProcessed:(hist.processedUrls||[]).length,
+        serverTime:nowTR,
+        nextCountdownSeconds:nextInSeconds,
+        nextEstimatedTime,
+        followerStats:{
+          current:0,
+          target:1000,
+          progressPct:0.0,
+          growthVelocity:'Organik & Güvenli (~5–15 potansiyel işletmeci / gün)'
+        },
+        actions:actions.reverse().slice(0,25),
         recentLogs
       });
     }

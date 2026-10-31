@@ -756,5 +756,31 @@
     "audience": "İşletme sahipleri, mimarlar, satış ekipleri, girişimciler ve şehir analistleri",
     "tone": "Net, profesyonel, yapay zekâ klişelerinden uzak doğal kurumsal dil"
   },
-  "events": []
+  "events": [
+    {
+      "id": "c96aacbc-34e2-4471-a1f7-964547826b96",
+      "key": "auto-discovery:016c1c8f-1d53-4264-8668-87bacef67d0e:2026-10-31",
+      "kind": "auto_discovery",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "status": "reconciliation_required",
+      "startedAt": "2026-10-31T08:52:34.546Z",
+      "results": [],
+      "error": "AI servisine ulaşılamadı veya yanıt okunamadı. Otomatik tekrar yapılmadı.",
+      "finishedAt": "2026-10-31T08:52:56.215Z"
+    }
+  ],
+  "engagement": {
+    "enabled": true,
+    "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+    "hashtags": [
+      "verianalizi",
+      "esnaf",
+      "isletme",
+      "yerelrehber",
+      "girisimcilik"
+    ],
+    "minRelevance": 85,
+    "maxCommentsPerDay": 2,
+    "autoSend": true
+  }
 }

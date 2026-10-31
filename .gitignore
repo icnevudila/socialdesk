@@ -10,3 +10,5 @@ __pycache__/
 .env*.local
 
 data/.server.lock
+data/private-session.json
+data/cookies.json

@@ -22,24 +22,30 @@
       "title": "Dağınık Bilgilerden Düzenli Listelere",
       "caption": "İnternetteki parça parça ve güncelliğini yitirmiş rehberlerle vakit kaybetmeyin. İşletme adı, iletişim bilgileri ve konum verilerini tek bir düzenli CSV dosyasında toplayın. Örnek listeleri incelemek için: veriburada.com\n\n#düzenliveri #işletmelistesi #csv #verimodelleme #veriburada",
       "kind": "image",
-      "status": "scheduled",
+      "status": "published",
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
       "scheduledAt": "2026-11-01T09:00:00.000Z",
       "mediaUrl": "https://socialdesk-sage.vercel.app/media/02_duzenli_listeler.jpg",
       "theme": "forest",
-      "createdAt": "2026-10-30T22:04:23.238Z"
+      "createdAt": "2026-10-30T22:04:23.238Z",
+      "publishedId": "DfK9qImzxd7",
+      "publishedAt": "2026-10-31T20:53:07.061Z",
+      "instagramUrl": "https://www.instagram.com/p/DfK9qImzxd7/"
     },
     {
       "id": "d284525c-3655-48ab-8bc1-01e157727fb5",
       "title": "Şehrinizde Yeni Kim Var? Aylık Liste",
       "caption": "Şehrinizde kapılarını yeni açan işletmelerden ilk siz haberdar olun. Tedarikçi, toptancı ve ajanslar için her ay güncellenen yeni açılan işletmeler listesini veriburada.com üzerinden temin edebilirsiniz.\n\n#yeniaçılanişletmeler #sıcakfırsatlar #tedarikçi #b2bsatış #veriburada",
       "kind": "image",
-      "status": "scheduled",
+      "status": "published",
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
       "scheduledAt": "2026-11-02T09:00:00.000Z",
       "mediaUrl": "https://socialdesk-sage.vercel.app/media/03_yeni_acilan_isletmeler.jpg",
       "theme": "forest",
-      "createdAt": "2026-10-30T22:04:23.238Z"
+      "createdAt": "2026-10-30T22:04:23.238Z",
+      "publishedId": "DfK96v_zxLV",
+      "publishedAt": "2026-10-31T20:53:07.069Z",
+      "instagramUrl": "https://www.instagram.com/p/DfK96v_zxLV/"
     },
     {
       "id": "82e8c85d-4c80-45cd-83fe-1518f91b9f15",
@@ -58,24 +64,30 @@
       "title": "Listenize Giden 3 Kolay Adım",
       "caption": "1. İlinizi seçin. 2. Sektörünüzü belirleyin. 3. İşletme listenizi CSV formatında indirin. Satış ve pazarlama ekiplerinin aradığı hız veriburada.com adresinde.\n\n#üçadımdaveri #kolayfiltre #pazararaştırması #hızlıerişim #veriburada",
       "kind": "image",
-      "status": "scheduled",
+      "status": "published",
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
       "scheduledAt": "2026-11-04T09:00:00.000Z",
       "mediaUrl": "https://socialdesk-sage.vercel.app/media/05_uc_adimda_liste.jpg",
       "theme": "forest",
-      "createdAt": "2026-10-30T22:04:23.238Z"
+      "createdAt": "2026-10-30T22:04:23.238Z",
+      "publishedId": "DfK-LRDzzK5",
+      "publishedAt": "2026-10-31T20:53:07.069Z",
+      "instagramUrl": "https://www.instagram.com/p/DfK-LRDzzK5/"
     },
     {
       "id": "646c8a12-bafd-458a-a853-78ee21b85472",
       "title": "Telefon, Web ve Adres Tek Listede",
       "caption": "Hatalı numaralar ve kapanmış adreslerle zaman kaybetmeyin. Doğrulanmış telefon, aktif web sitesi ve açık adres verilerini düzenli sütunlarda incelemek için veriburada.com'daki örnek CSV dökümüne göz atın.\n\n#doğrulanmışveri #telefonadresi #müşteriverisi #b2bveri #veriburada",
       "kind": "image",
-      "status": "scheduled",
+      "status": "published",
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
       "scheduledAt": "2026-11-05T09:00:00.000Z",
       "mediaUrl": "https://socialdesk-sage.vercel.app/media/06_telefon_web_adres.jpg",
       "theme": "forest",
-      "createdAt": "2026-10-30T22:04:23.238Z"
+      "createdAt": "2026-10-30T22:04:23.238Z",
+      "publishedId": "DfK-b0-TqdR",
+      "publishedAt": "2026-10-31T20:53:07.069Z",
+      "instagramUrl": "https://www.instagram.com/p/DfK-b0-TqdR/"
     },
     {
       "id": "45383b08-89c8-47fe-a929-7326131a95f9",

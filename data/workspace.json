@@ -744,7 +744,10 @@
       "url": "https://www.instagram.com/p/Cx101mimari/",
       "topic": "Mimarlık ve Şehir Projesinde Lokasyon Analitiği",
       "note": "Proje geliştirme aşamasında çevresel ticari fonksiyon karması ve yaya aksı analizleri soruldu. Veriburada lokasyon analitiği uzmanlığıyla organik yanıt verilebilir.",
-      "createdAt": "2026-10-30T22:04:23.242Z"
+      "createdAt": "2026-10-30T22:04:23.242Z",
+      "sourceText": "",
+      "commentDraft": "Mimarlık ve Şehir Projesinde Lokasyon Analitiği\n\nİşletmenizi büyütürken ve yeni adımlar atarken en güvenilir yol haritası doğrulanmış saha verisidir. Veriburada ile doğru lokasyonda doğru adımı atın.\n\nDetaylı analizler ve güncel listeler için: veriburada.com\n\n#veriburada #isletme #lokasyonanalizi #girisimcilik #turkiye",
+      "updatedAt": "2026-10-31T10:39:28.557Z"
     },
     {
       "id": "f620c405-0552-46ac-9bc0-8c0548d224bc",
@@ -808,6 +811,16 @@
       "startedAt": "2026-10-31T09:52:48.540Z",
       "commentId": "18102108791368685",
       "finishedAt": "2026-10-31T09:52:53.955Z"
+    },
+    {
+      "id": "18f343aa-55ac-4a55-8ca5-154548b3ba41",
+      "key": "growth:016c1c8f-1d53-4264-8668-87bacef67d0e:2026-11-01:09:30",
+      "kind": "growth",
+      "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
+      "targetDate": "2026-11-01",
+      "slot": "09:30",
+      "status": "processing",
+      "startedAt": "2026-10-31T12:32:07.551Z"
     }
   ],
   "engagement": {
@@ -818,15 +831,20 @@
       "esnaf",
       "kafe",
       "dukkan",
-      "mimaritasarim",
       "girisimcilik",
       "lokasyon",
-      "istanbulisletmeleri"
+      "emlak",
+      "gayrimenkul",
+      "istanbulisletmeleri",
+      "restoran"
     ],
     "minRelevance": 80,
-    "maxCommentsPerDay": 2,
+    "maxCommentsPerDay": 3,
+    "maxLikesPerDay": 40,
+    "maxFollowsPerDay": 20,
     "autoSend": true,
     "autoLike": true,
+    "autoFollow": true,
     "viewStories": true,
     "nightSleep": true
   },
@@ -834,22 +852,49 @@
     "enabled": true,
     "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
     "topics": [
-      "Yerel İşletmeler İçin Lokasyon Analizi",
-      "Doğru Bölgede Doğru Müşteri Kitlesi",
-      "Saha ve Harita Verisiyle İş Geliştirme",
-      "Şehrinizdeki Yeni İşletmeleri Keşfedin"
+      "Yerel İşletmeler İçin Lokasyon Analizi ve Doğru Konum Seçimi",
+      "Doğru Bölgede Doğru Müşteri Kitlesine Ulaşmanın Yolları",
+      "Saha ve Harita Verisiyle İş Geliştirme ve Pazar Payı Artırma",
+      "Şehrinizdeki Yeni Açılan İşletmeleri Keşfedin ve Fırsatları Yakalayın",
+      "Gayrimenkul ve Ticari Alan Değerlendirmesinde Yapay Zeka Desteği",
+      "Kafe ve Restoran Açarken Bölgesel Rakip Yoğunluğu Analizi",
+      "Esnaf ve Küçük İşletmeler İçin Dijital Görünürlük Rehberi",
+      "Lokasyon Verisi Neden Bir İşletmenin En Değerli Sermayesidir?"
     ],
     "weekdays": [
+      0,
       1,
       2,
       3,
       4,
-      5
+      5,
+      6
     ],
-    "publishAt": "13:00",
-    "prepareAt": "09:00",
+    "publishAt": "09:30",
+    "slots": [
+      "09:30",
+      "13:00",
+      "19:30"
+    ],
+    "prepareAt": "08:00",
     "autoImages": false,
-    "autoQueue": false,
-    "mediaSources": []
+    "autoQueue": true,
+    "mediaSources": [
+      "https://socialdesk-sage.vercel.app/media/01_sehir_ve_kesif.jpg",
+      "https://socialdesk-sage.vercel.app/media/02_duzenli_listeler.jpg",
+      "https://socialdesk-sage.vercel.app/media/03_yeni_acilan_isletmeler.jpg",
+      "https://socialdesk-sage.vercel.app/media/04_satis_arastirmasi.jpg",
+      "https://socialdesk-sage.vercel.app/media/05_uc_adimda_liste.jpg",
+      "https://socialdesk-sage.vercel.app/media/06_telefon_web_adres.jpg",
+      "https://socialdesk-sage.vercel.app/media/07_sektorleri_kesfet.jpg",
+      "https://socialdesk-sage.vercel.app/media/08_ajanslar_icin.jpg",
+      "https://socialdesk-sage.vercel.app/media/09_arastir_listele_baglanti_kur.jpg",
+      "https://socialdesk-sage.vercel.app/media/10_firsatlar_orada_veri_burada.jpg",
+      "https://socialdesk-sage.vercel.app/media/post_01.jpg",
+      "https://socialdesk-sage.vercel.app/media/post_02.jpg",
+      "https://socialdesk-sage.vercel.app/media/post_03.jpg",
+      "https://socialdesk-sage.vercel.app/media/post_04.jpg",
+      "https://socialdesk-sage.vercel.app/media/post_05.jpg"
+    ]
   }
 }

@@ -13,7 +13,7 @@ import {privateCall} from './private.mjs';
 import {createEngagementQueue,queueReviewedComment,createDiscoveryAutomation,validateEngagement} from './engagement.mjs';
 import {createGrowthPlanner,validateGrowth,DEFAULT_GROWTH} from './growth.mjs';
 import { createScheduler } from './scheduler.mjs';
-import { isAuthenticated, getAdminPassword, computeAuthToken, passwordMatches, authCookie, revokeSession } from './auth.mjs';
+import { isAuthenticated, getAdminPassword, computeAuthToken, passwordMatches, usernameMatches, authCookie, revokeSession } from './auth.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4317);
@@ -46,15 +46,29 @@ function generateSmartFallback(task, brief, brand){
   return `${cleanBrief}\n\nİşletmenizi büyütürken ve yeni adımlar atarken en güvenilir yol haritası doğrulanmış saha verisidir. ${name} ile doğru lokasyonda doğru adımı atın.\n\nDetaylı analizler ve güncel listeler için: veriburada.com\n\n#veriburada #isletme #lokasyonanalizi #girisimcilik #turkiye`;
 }
 const server = http.createServer(async(req,res)=>{
-  if(!isCloud){
+  const effectiveHost = req.headers['x-forwarded-host'] || req.headers.host || '';
+  const isVercelHost = effectiveHost.endsWith('.vercel.app') || (req.headers.host && req.headers.host.endsWith('.vercel.app'));
+
+  if(!isCloud && !isVercelHost){
     const allowedHost = [`127.0.0.1:${port}`,`localhost:${port}`];
-    if(!allowedHost.includes(req.headers.host)) return json(res,403,{error:'Yerel erişim gerekli.'});
+    if(!allowedHost.includes(req.headers.host) && !allowedHost.includes(effectiveHost)) return json(res,403,{error:'Yerel erişim gerekli.'});
     if(req.headers.origin && ![`http://127.0.0.1:${port}`,`http://localhost:${port}`].includes(req.headers.origin)) return json(res,403,{error:'Kaynak izinli değil.'});
   } else if(req.headers.origin){
-    try{if(new URL(req.headers.origin).host!==req.headers.host)return json(res,403,{error:'Kaynak izinli değil.'})}catch{return json(res,403,{error:'Kaynak izinli değil.'})}
+    try{
+      const originHost = new URL(req.headers.origin).host;
+      const isAllowedVercelOrigin = originHost.endsWith('.vercel.app');
+      const isSameHost = originHost === effectiveHost || originHost === req.headers.host;
+      if(!isSameHost && !isAllowedVercelOrigin) return json(res,403,{error:'Kaynak izinli değil.'});
+    }catch{
+      return json(res,403,{error:'Kaynak izinli değil.'});
+    }
   }
-  if(process.env.VERCEL&&req.headers.origin){try{if(new URL(req.headers.origin).host!==req.headers.host)return json(res,403,{error:'Kaynak izinli değil.'})}catch{return json(res,403,{error:'Kaynak izinli değil.'})}}
-  if(req.headers['sec-fetch-site']==='cross-site')return json(res,403,{error:'Kaynak izinli değil.'});
+  if(['POST','PUT','DELETE','PATCH'].includes(req.method) && req.headers['sec-fetch-site']==='cross-site'){
+    const originHost = req.headers.origin ? (() => { try { return new URL(req.headers.origin).host; } catch { return ''; } })() : '';
+    if(!originHost.endsWith('.vercel.app') && originHost !== effectiveHost && originHost !== req.headers.host) {
+      return json(res,403,{error:'Kaynak izinli değil.'});
+    }
+  }
   if(['POST','PUT','DELETE'].includes(req.method)&&req.headers['content-type']&&!req.headers['content-type'].startsWith('application/json')&&req.url!=='/api/media')return json(res,415,{error:'JSON istek gerekli.'});
   res.setHeader('X-Content-Type-Options','nosniff');
   res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: http://167.233.201.31:3456 https://media.167.233.201.31.nip.io; media-src 'self' blob: https: http://167.233.201.31:3456 https://media.167.233.201.31.nip.io; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
@@ -64,7 +78,11 @@ const server = http.createServer(async(req,res)=>{
       if(!getAdminPassword())return json(res,503,{error:'Yönetim şifresi yapılandırılmadı. Sunucuda ADMIN_PASSWORD ayarlanmalı.'});
       const key=req.socket.remoteAddress||'local';let attempt=loginAttempts.get(key);if(!attempt||attempt.until<Date.now())attempt={count:0,until:Date.now()+10*60*1000};
       if(attempt.count>=5)return json(res,429,{error:'Çok fazla başarısız giriş. 10 dakika sonra tekrar deneyin.'});
-      const b=await body(req);if(!passwordMatches(b.password)){attempt.count++;loginAttempts.set(key,attempt);return json(res,401,{error:'Geçersiz şifre.'})}
+      const b=await body(req);
+      if(b.username && !usernameMatches(b.username)){
+        attempt.count++;loginAttempts.set(key,attempt);return json(res,401,{error:'Geçersiz kullanıcı adı veya şifre.'});
+      }
+      if(!passwordMatches(b.password)){attempt.count++;loginAttempts.set(key,attempt);return json(res,401,{error:'Geçersiz şifre.'})}
       loginAttempts.delete(key);const token=computeAuthToken(getAdminPassword());res.setHeader('Set-Cookie',authCookie(token,{secure:Boolean(process.env.VERCEL)}));return json(res,200,{ok:true,token});
     }
     if(p==='/api/auth/logout'&&req.method==='POST'){revokeSession(req);res.setHeader('Set-Cookie',authCookie('',{secure:Boolean(process.env.VERCEL)}));return json(res,200,{ok:true})}

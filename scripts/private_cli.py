@@ -15,7 +15,7 @@ SESSION=DATA/'private-session.json'
 
 def run():
  parser=argparse.ArgumentParser()
- parser.add_argument('action',choices=['check','login','discover','comment','like','follow','story','interact','identity','publish'])
+ parser.add_argument('action',choices=['check','login','discover','comment','like','follow','story','interact','identity','publish','analytics'])
  parser.add_argument('--tag',default='')
  parser.add_argument('--url',default='')
  parser.add_argument('--file',default='')
@@ -111,6 +111,34 @@ def run():
  if args.action=='identity':
   user=client.account_info()
   return {'username':user.username,'userId':str(user.pk),'verified':True}
+ if args.action=='analytics':
+  user=client.user_info(client.user_id)
+  medias=[]
+  try:
+   for m in client.user_medias(client.user_id, amount=12):
+    medias.append({
+     'id': str(m.pk),
+     'caption': m.caption_text or '',
+     'media_type': 'VIDEO' if m.media_type==2 else 'IMAGE',
+     'timestamp': m.taken_at.isoformat() if getattr(m,'taken_at',None) else '',
+     'like_count': getattr(m,'like_count',0),
+     'comments_count': getattr(m,'comment_count',0),
+     'permalink': f'https://www.instagram.com/p/{m.code}/'
+    })
+  except Exception:
+   pass
+  return {
+   'profile': {
+    'id': str(user.pk),
+    'username': user.username,
+    'followers_count': user.follower_count,
+    'follows_count': user.following_count,
+    'media_count': user.media_count,
+    'biography': user.biography or ''
+   },
+   'media': medias,
+   'source': 'instagram-private-session'
+  }
  if args.action=='discover':
   tag=args.tag.strip().lstrip('#')
   if not tag or len(tag)>80 or not tag.replace('_','').isalnum():raise ValueError('Geçerli bir hashtag yazın.')

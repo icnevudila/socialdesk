@@ -12,3 +12,4 @@ __pycache__/
 data/.server.lock
 data/private-session.json
 data/cookies.json
+cloudflared.exe

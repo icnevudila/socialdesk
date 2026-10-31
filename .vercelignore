@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.venv
+artifacts
+.git
+scripts
+tests
+cloudflared.exe
+*.log
+data/private-session.json
+data/*.log
+data/.server.lock

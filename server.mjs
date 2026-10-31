@@ -23,7 +23,7 @@ const durable=!process.env.VERCEL;
 const schedulerEnabled=durable&&process.env.SOCIALDESK_DISABLE_SCHEDULER!=='true';
 const store = await createStore(dataDir, { seed: Boolean(process.env.VERCEL) });
 const releaseDataLease=durable?await acquireDataLease(dataDir):()=>{};
-const integrations=await createIntegrations(dataDir);
+const integrations=await createIntegrations(dataDir, { seed: Boolean(process.env.VERCEL) });
 const loginAttempts=new Map();
 function canPublish(id){try{const a=integrations.account(id);return Boolean(a.verifiedAt&&a.publishing)}catch{return false}}
 const json = (res, code, value) => {res.writeHead(code, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(value));};

@@ -1,22 +1,36 @@
 import {readFile,writeFile,rename,mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
-export async function createIntegrations(dir){
+export async function createIntegrations(dir, { seed = false } = {}){
  await mkdir(dir,{recursive:true});const file=path.join(dir,'integrations.json');let data;
- try{data=JSON.parse(await readFile(file,'utf8'))}catch(e){if(e.code!=='ENOENT')throw e;data={accounts:[],ai:{}}}
+ try{
+  data=JSON.parse(await readFile(file,'utf8'));
+ }catch(e){
+  if(e.code!=='ENOENT')throw e;
+  if(seed){
+   try{
+    const root=path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/,'$1'));
+    data=JSON.parse(await readFile(path.join(root,'data','integrations.json'),'utf8'));
+   }catch{
+    data={accounts:[],ai:{}};
+   }
+  }else{
+   data={accounts:[],ai:{}};
+  }
+ }
  const envToken = (process.env.INSTAGRAM_ACCESS_TOKEN||'').trim();
  const envUserId = (process.env.INSTAGRAM_USER_ID||'').trim();
  const envVersion = (process.env.META_API_VERSION||'').trim() || 'v21.0';
  if(!data.accounts.length && envToken && envUserId) {
   data.accounts.push({
-   id:'env',
+   id:'016c1c8f-1d53-4264-8668-87bacef67d0e',
    label:'@veriburada',
    userId:envUserId,
    token:envToken,
    version:envVersion,
    publishing:false,
    verifiedAt:null,
-   username:'',
+   username:'veriburada',
    loginType:envToken.startsWith('IGQ')?'instagram':'facebook'
   });
  }

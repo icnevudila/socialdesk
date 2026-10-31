@@ -47,25 +47,26 @@ function generateSmartFallback(task, brief, brand){
 }
 const server = http.createServer(async(req,res)=>{
   const effectiveHost = req.headers['x-forwarded-host'] || req.headers.host || '';
-  const isVercelHost = effectiveHost.endsWith('.vercel.app') || (req.headers.host && req.headers.host.endsWith('.vercel.app'));
+  const isAllowedDomain = (h) => Boolean(h && (h.endsWith('.vercel.app') || h.endsWith('.trycloudflare.com') || h.endsWith('.nip.io')));
+  const isCloudHost = isCloud || isAllowedDomain(effectiveHost) || isAllowedDomain(req.headers.host);
 
-  if(!isCloud && !isVercelHost){
+  if(!isCloudHost){
     const allowedHost = [`127.0.0.1:${port}`,`localhost:${port}`];
     if(!allowedHost.includes(req.headers.host) && !allowedHost.includes(effectiveHost)) return json(res,403,{error:'Yerel erişim gerekli.'});
     if(req.headers.origin && ![`http://127.0.0.1:${port}`,`http://localhost:${port}`].includes(req.headers.origin)) return json(res,403,{error:'Kaynak izinli değil.'});
   } else if(req.headers.origin){
     try{
       const originHost = new URL(req.headers.origin).host;
-      const isAllowedVercelOrigin = originHost.endsWith('.vercel.app');
+      const isAllowedOrigin = isAllowedDomain(originHost);
       const isSameHost = originHost === effectiveHost || originHost === req.headers.host;
-      if(!isSameHost && !isAllowedVercelOrigin) return json(res,403,{error:'Kaynak izinli değil.'});
+      if(!isSameHost && !isAllowedOrigin) return json(res,403,{error:'Kaynak izinli değil.'});
     }catch{
       return json(res,403,{error:'Kaynak izinli değil.'});
     }
   }
   if(['POST','PUT','DELETE','PATCH'].includes(req.method) && req.headers['sec-fetch-site']==='cross-site'){
     const originHost = req.headers.origin ? (() => { try { return new URL(req.headers.origin).host; } catch { return ''; } })() : '';
-    if(!originHost.endsWith('.vercel.app') && originHost !== effectiveHost && originHost !== req.headers.host) {
+    if(!isAllowedDomain(originHost) && originHost !== effectiveHost && originHost !== req.headers.host) {
       return json(res,403,{error:'Kaynak izinli değil.'});
     }
   }

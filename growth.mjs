@@ -27,13 +27,13 @@ export function validateGrowth(input){
   config.weekdays=[...new Set(input.weekdays||DEFAULT_GROWTH.weekdays)];
   if(!config.weekdays.length||config.weekdays.some(d=>!Number.isInteger(d)||d<0||d>6))throw Error('En az bir geçerli yayın günü seçin.');
   
-  if (Array.isArray(input.slots) && input.slots.length > 0) {
-    config.slots = [...new Set(input.slots.map(s => String(s).trim()))].filter(s => /^([01]\d|2[0-3]):[0-5]\d$/.test(s));
-    if (!config.slots.length) throw Error('Saatleri SS:DD biçiminde seçin.');
-    config.publishAt = config.slots[0];
-  } else {
-    if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(config.publishAt)) throw Error('Saatleri SS:DD biçiminde seçin.');
-  }
+  if(Array.isArray(input.slots)&&input.slots.length){
+    if(input.slots.length>3||input.slots.some(slot=>!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(slot).trim())))throw Error('Bir gün için 1–3 geçerli yayın saati seçin.');
+    config.slots=[...new Set(input.slots.map(slot=>String(slot).trim()))].sort();
+    const minutes=config.slots.map(slot=>Number(slot.slice(0,2))*60+Number(slot.slice(3)));
+    if(minutes.some((minute,index)=>index&&minute-minutes[index-1]<180))throw Error('Yayın saatleri arasında en az 3 saat bırakın.');
+    config.publishAt=config.slots[0];
+  }else if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(config.publishAt))throw Error('Saatleri SS:DD biçiminde seçin.');
 
   if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(config.prepareAt))throw Error('Saatleri SS:DD biçiminde seçin.');
   for(const source of config.mediaSources){
@@ -87,14 +87,14 @@ export function createGrowthPlanner(store,integrations,{dataDir,enabled=true,tex
         const ai=integrations.ai();
         const recent=store.read().posts.filter(p=>p.accountId===account.id).slice(-8).map(p=>p.title).join(', ');
         const result=await text(ai,{task:'caption',brief:topic,brand:store.read().brand,context:'Son içerik başlıkları; tekrar etme: '+recent});
-        post=validatePost({title:topic,caption:result.text,status:'draft',accountId:account.id,scheduledAt,requestId:key,mediaUrl:config.mediaSources[index%Math.max(config.mediaSources.length,1)]||''});
+        post=validatePost({title:topic,caption:result.text,status:'draft',accountId:account.id,scheduledAt,requestId:key,mediaUrl:config.mediaSources[index%Math.max(config.mediaSources.length,1)]||'',kind:/\.mp4(?:[?#]|$)/i.test(config.mediaSources[index%Math.max(config.mediaSources.length,1)]||'')?'reel':'image'});
         await store.mutate(db=>{db.posts.push(post);Object.assign(db.events.find(e=>e.id===run.id),{postId:post.id,stage:'text_saved'})});
         if(config.autoImages){
           const generated=await image(ai,{prompt:`${topic}. Marka: ${store.read().brand.name}. Instagram için ticari içerik görseli. Uydurma yazı ve istatistik ekleme.`});
           const saved=await materialize(dataDir,generated,ai);
-          post.localMediaUrl=saved.localUrl;
+          post.kind='image';post.localMediaUrl=saved.localUrl;
           if(saved.sourceUrl)post.mediaUrl=saved.sourceUrl;
-          await store.mutate(db=>Object.assign(db.posts.find(p=>p.id===post.id),{localMediaUrl:post.localMediaUrl,mediaUrl:post.mediaUrl}));
+          await store.mutate(db=>Object.assign(db.posts.find(p=>p.id===post.id),{localMediaUrl:post.localMediaUrl,mediaUrl:post.mediaUrl,kind:post.kind}));
         }
         let status='ready_for_review';
         if(config.autoQueue){
@@ -139,14 +139,7 @@ export function createGrowthPlanner(store,integrations,{dataDir,enabled=true,tex
         const ai = integrations.ai();
         const recent = store.read().posts.filter(p => p.accountId === account.id).slice(-8).map(p => p.title).join(', ');
 
-        let slotBrief = topic;
-        if (slot === '09:30' || slotIndex === 0) {
-          slotBrief = `[Sabah Yayını - 09:30]: ${topic}. İş dünyası için sabah kahvesi eşliğinde hap bilgi, yerel veri ve pazar analizi odaklı kurumsal içerik.`;
-        } else if (slot === '13:00' || slotIndex === 1) {
-          slotBrief = `[Öğle Yayını - 13:00]: ${topic}. Öğle molası için lokasyon stratejisi, saha deneyimi ve somut işletme başarı vakası.`;
-        } else if (slot === '19:30' || slotIndex === 2) {
-          slotBrief = `[Akşam Yayını - 19:30]: ${topic}. Akşam prime time vizyon ve etkileşim içeriği. Takipçiye düşüncesini soran güçlü soru ile bitir.`;
-        }
+        const slotBrief=`${topic}. Yayın saati: ${slot}, İstanbul. Somut ve yararlı bir bilgi ver. Gerçek müşteri vakası veya istatistik uydurma; aynı çağrıyı sürekli tekrarlama.`;
 
         const result = await text(ai, { task: 'caption', brief: slotBrief, brand: store.read().brand, context: 'Son içerik başlıkları; tekrar etme: ' + recent });
         const mediaIndex = (dayNum * 3 + slotIndex) % Math.max(config.mediaSources.length, 1);
@@ -157,7 +150,8 @@ export function createGrowthPlanner(store,integrations,{dataDir,enabled=true,tex
           accountId: account.id,
           scheduledAt,
           requestId: key,
-          mediaUrl: config.mediaSources[mediaIndex] || ''
+          mediaUrl: config.mediaSources[mediaIndex] || '',
+          kind:/\.mp4(?:[?#]|$)/i.test(config.mediaSources[mediaIndex]||'')?'reel':'image'
         });
 
         await store.mutate(db => {
@@ -168,9 +162,9 @@ export function createGrowthPlanner(store,integrations,{dataDir,enabled=true,tex
         if (config.autoImages) {
           const generated = await image(ai, { prompt: `${topic}. Marka: ${store.read().brand.name}. Instagram için ticari içerik görseli. Uydurma yazı ve istatistik ekleme.` });
           const saved = await materialize(dataDir, generated, ai);
-          post.localMediaUrl = saved.localUrl;
+          post.kind='image';post.localMediaUrl = saved.localUrl;
           if (saved.sourceUrl) post.mediaUrl = saved.sourceUrl;
-          await store.mutate(db => Object.assign(db.posts.find(p => p.id === post.id), { localMediaUrl: post.localMediaUrl, mediaUrl: post.mediaUrl }));
+          await store.mutate(db => Object.assign(db.posts.find(p => p.id === post.id), { localMediaUrl: post.localMediaUrl, mediaUrl: post.mediaUrl, kind:post.kind }));
         }
 
         let status = 'ready_for_review';

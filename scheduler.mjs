@@ -21,9 +21,10 @@ export function createScheduler(store,integrations,{create=createContainer,statu
      await store.mutate(db=>{
       const target=db.posts.find(x=>x.id===p.id);
       if(target&&target.status==='scheduled'){
-       target.status='late_rescheduled';
-       target.error='Planlanan zamanın üzerinden tolerans süresi geçtiği için ani yayını engellemek üzere ertelendi.';
-       target.scheduledAt=new Date(currentTime+1800000).toISOString();
+       target.status='draft';
+       target.missedScheduledAt=target.scheduledAt;
+       target.error='Paylaşım zamanı kaçırıldı. Toplu gecikmiş yayın yapılmadı; yeni bir zaman seçin.';
+       target.scheduledAt=null;
       }
      });
      continue;
@@ -43,22 +44,7 @@ export function createScheduler(store,integrations,{create=createContainer,statu
    await update({status:'published',publishedId:result.id,publishedAt:new Date(now()).toISOString()});
    try{const published=await lookup(result.id,account);if(published.permalink)await update({permalink:published.permalink})}catch{}
  }catch(e){
-   if(e.metaCode===190){
-     try{
-       const pCheck=await call('check');
-       if(pCheck.installed&&pCheck.sessionSaved){
-         await update({publishAttemptedAt:new Date(now()).toISOString()});
-         const pRes=await call('publish',{url:post.mediaUrl,file:post.localMediaUrl,caption:post.caption});
-         await update({status:'published',publishedId:pRes.id,publishedAt:new Date(now()).toISOString(),permalink:pRes.permalink||''});
-         return;
-       }
-     }catch(pe){
-       if(integrations.invalidate)await integrations.invalidate(account.id);
-       await update({status:'reconciliation_required',error:'Meta token süresi doldu (190) ve özel motorla yayınlama denenirken hata alındı: '+pe.message});
-       return;
-     }
-     if(integrations.invalidate)await integrations.invalidate(account.id);
-   }
+   if(e.metaCode===190&&integrations.invalidate)await integrations.invalidate(account.id);
    await update({status:'reconciliation_required',error:e.message});
  }
  }finally{busy=false}}

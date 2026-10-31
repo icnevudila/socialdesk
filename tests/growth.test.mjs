@@ -15,3 +15,8 @@ test('kapalı otomasyon kendiliğinden üretim yapmaz; elle tek gün hazırlanab
 
 test('haftalık hazırlama seçili günleri tek tek işler ve aynı hafta ikinci iş açmaz',async()=>{const {planner,store,calls}=setup({weekdays:[1,3,5]});const week=await planner.queueWeek('2099-01-05');assert.equal(week.dates.length,3);assert.equal((await planner.queueWeek('2099-01-06')).id,week.id);for(let i=0;i<4;i++)await planner.runWeeklyOnce();const batch=store.read().events.find(e=>e.kind==='weekly_plan');assert.equal(batch.status,'completed');assert.equal(calls(),3);assert.equal(store.read().posts.length,3)});
 test('haftalık hazırlama ilk belirsiz AI hatasında durur; diğer günler için istek yapmaz',async()=>{let calls=0;const {planner,store}=setup({weekdays:[1,3,5]},{text:async()=>{calls++;throw Error('upstream unavailable')}});await planner.queueWeek('2099-01-05');await planner.runWeeklyOnce();await planner.runWeeklyOnce();assert.equal(calls,1);assert.equal(store.read().events.find(e=>e.kind==='weekly_plan').status,'reconciliation_required')});
+
+test('yayın slotları hatalı/çok yakın olamaz; video kaynağı Reels olarak kuyruğa girer',async()=>{
+ assert.throws(()=>validateGrowth({slots:['09:30','bad']}));assert.throws(()=>validateGrowth({slots:['09:30','10:00']}));assert.throws(()=>validateGrowth({slots:['08:00','12:00','16:00','20:00']}));
+ const {planner,store}=setup({autoQueue:true,mediaSources:['https://example.com/video.mp4']});await planner.runOnce();assert.equal(store.read().posts[0].kind,'reel');
+});

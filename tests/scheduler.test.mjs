@@ -45,7 +45,8 @@ test('tolerans süresini aşan çok eski gönderiler ertelenerek karantinaya al�
  await scheduler.runOnce();
  assert.equal(calls,0);
  const p=store.read().posts[0];
- assert.equal(p.status,'late_rescheduled');
- assert.ok(p.error.includes('ani yayını engellemek'));
- assert.ok(Date.parse(p.scheduledAt)>currentTime);
+ assert.equal(p.status,'draft');
+ assert.ok(p.error.includes('Toplu gecikmiş yayın yapılmadı'));
+ assert.equal(p.scheduledAt,null);
+ assert.ok(p.missedScheduledAt);
 });

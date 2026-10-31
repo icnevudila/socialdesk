@@ -1,7 +1,7 @@
 import {createHmac,randomBytes,timingSafeEqual} from 'node:crypto';
 const revoked=new Set();
 const TTL=8*60*60*1000;
-export function getAdminPassword(){return (process.env.ADMIN_PASSWORD||'alidvnc123@').trim()}
+export function getAdminPassword(){return (process.env.ADMIN_PASSWORD||'').trim()}
 export function getAdminUsername(){return (process.env.ADMIN_USERNAME||'admin').trim().toLowerCase()}
 export function usernameMatches(input){if(!input)return true;const norm=String(input).trim().toLowerCase().replace(/^@/,'');return ['admin','veriburada',getAdminUsername()].includes(norm)}
 function digest(password,value){return createHmac('sha256',process.env.AUTH_SECRET||password).update('socialdesk-session-v2:'+value).digest('hex')}

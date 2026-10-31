@@ -1,3 +1,5 @@
+> GÜNCEL: 1 Kasım 2026 canlı kurulum ve kabul raporu `docs/SON_DURUM_2026-11-01.md` dosyasındadır. Aşağıdaki eski notlar tarihsel bağlamdır.
+
 # Socialdesk — Diğer bota devir
 
 Tarih: 31 Ekim 2026. Çalışma klasörü: `C:\Users\TP2\Documents\socialdesk`.

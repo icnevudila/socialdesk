@@ -1,0 +1,18 @@
+[Unit]
+Description=Socialdesk 24/7 Organic Instagram Growth Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=opc
+WorkingDirectory=/home/opc/socialdesk-growth
+Environment=SOCIALDESK_DATA_DIR=/home/opc/socialdesk-growth/data
+Environment=NODE_ENV=production
+Environment=STATUS_PORT=4318
+EnvironmentFile=/home/opc/socialdesk-growth/.env
+ExecStart=/usr/local/bin/socialdesk-node22 --env-file-if-exists=.env /home/opc/socialdesk-growth/scripts/organic_growth_daemon.mjs
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

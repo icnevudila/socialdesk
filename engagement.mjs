@@ -11,9 +11,9 @@ export function createEngagementQueue(store,{call=privateCall,enabled=true,now=(
       busy=true;
       try{
         const snapshot=store.read();
-        const lastSent=(snapshot.events||[]).filter(e=>e.kind==='private_comment'&&e.status==='accepted').reduce((last,e)=>Math.max(last,Date.parse(e.finishedAt||e.startedAt||'')||0),0);
+        const lastSent=(snapshot.events||[]).filter(e=>['private_comment','private_like'].includes(e.kind)&&e.status==='accepted').reduce((last,e)=>Math.max(last,Date.parse(e.finishedAt||e.startedAt||'')||0),0);
         if(lastSent&&now()-lastSent<minIntervalMs)return;
-        const candidate=(snapshot.events||[]).filter(e=>e.kind==='private_comment'&&(e.approvalMode!=='rules'||(snapshot.engagement?.enabled&&snapshot.engagement?.autoSend))&&['scheduled','waiting_connection'].includes(e.status)&&Date.parse(e.scheduledAt)<=now()&&(!e.nextConnectionCheckAt||Date.parse(e.nextConnectionCheckAt)<=now())).sort((a,b)=>Date.parse(a.scheduledAt)-Date.parse(b.scheduledAt))[0];
+        const candidate=(snapshot.events||[]).filter(e=>(e.kind==='private_comment'||(e.kind==='private_like'&&snapshot.engagement?.autoLike===true))&&(e.approvalMode!=='rules'||(snapshot.engagement?.enabled&&snapshot.engagement?.autoSend))&&['scheduled','waiting_connection'].includes(e.status)&&Date.parse(e.scheduledAt)<=now()&&(!e.nextConnectionCheckAt||Date.parse(e.nextConnectionCheckAt)<=now())).sort((a,b)=>Date.parse(a.scheduledAt)-Date.parse(b.scheduledAt))[0];
         if(!candidate)return;
         const readiness=await call('check');
         if(!readiness.installed||!readiness.sessionSaved){
@@ -42,6 +42,14 @@ export function createEngagementQueue(store,{call=privateCall,enabled=true,now=(
         const claimed=await store.mutate(db=>{
           const e=db.events.find(e=>e.id===candidate.id);
           if(!e||!['scheduled','waiting_connection'].includes(e.status))return null;
+          if(e.approvalMode==='rules'){
+            if(!db.engagement?.enabled||!db.engagement?.autoSend||db.engagement.accountId!==e.accountId)return null;
+            if(e.kind==='private_like'&&!db.engagement.autoLike)return null;
+            const today=dayInZone(new Date(now()));
+            const used=db.events.filter(x=>x.id!==e.id&&x.kind===e.kind&&x.accountId===e.accountId&&['processing','accepted','reconciliation_required'].includes(x.status)&&dayInZone(x.startedAt||x.scheduledAt||x.approvedAt)===today).length;
+            if(used>=(e.kind==='private_like'?Math.min(20,db.engagement.maxLikesPerDay||10):(db.engagement.maxCommentsPerDay||1)))return null;
+          }
+
           e.status='processing';
           e.startedAt=new Date(now()).toISOString();
           delete e.error;
@@ -49,14 +57,19 @@ export function createEngagementQueue(store,{call=privateCall,enabled=true,now=(
         });
         if(!claimed)return;
         try{
-          const r=await call('comment',{url:claimed.url,message:claimed.message});
-          if(!r.id||r.accepted!==true)throw Error('Instagram yorum kimliği doğrulanamadı.');
-          if(snapshot.engagement?.viewStories!==false&&claimed.targetUsername){try{await call('story',{username:claimed.targetUsername})}catch(_){}}
-          if(snapshot.engagement?.autoLike!==false&&claimed.url){try{await call('like',{url:claimed.url})}catch(_){}}
-          if(snapshot.engagement?.autoFollow===true&&claimed.targetUsername){try{await call('follow',{username:claimed.targetUsername})}catch(_){}}
-          await store.mutate(db=>Object.assign(db.events.find(e=>e.id===claimed.id),{status:'accepted',commentId:r.id,finishedAt:new Date(now()).toISOString()}));
+          const isLike=claimed.kind==='private_like';
+          const r=await call(isLike?'like':'comment',{url:claimed.url,...(!isLike?{message:claimed.message}:{})});
+          if(isLike?r.liked!==true:(!r.id||r.accepted!==true))throw Error('Instagram işlem sonucu doğrulanamadı.');
+          await store.mutate(db=>{
+            Object.assign(db.events.find(e=>e.id===claimed.id),{status:'accepted',...(isLike?{liked:true}:{commentId:r.id}),finishedAt:new Date(now()).toISOString()});
+            if(!isLike&&claimed.approvalMode==='rules'&&db.engagement?.enabled&&db.engagement?.autoSend&&db.engagement?.autoLike){
+              const key='like:'+claimed.accountId+':'+claimed.url.replace(/\/+$/,'');
+              if(!db.events.some(e=>e.key===key))db.events.push({id:randomUUID(),key,kind:'private_like',status:'scheduled',accountId:claimed.accountId,approvalMode:'rules',expectedUsername:claimed.expectedUsername,url:claimed.url,scheduledAt:new Date(now()+15*60*1000).toISOString(),createdAt:new Date(now()).toISOString()});
+            }
+          });
         }catch(e){
           await store.mutate(db=>Object.assign(db.events.find(x=>x.id===claimed.id),{status:'reconciliation_required',error:e.message,finishedAt:new Date(now()).toISOString()}));
+          if(claimed.approvalMode==='rules')await store.mutate(db=>{db.engagement={...db.engagement,enabled:false,autoSend:false,blockedReason:'Özel Instagram işlemi doğrulanamadı. Otomatik etkileşim durduruldu; sonucu kontrol edin.'}});
         }
       }finally{
         busy=false;
@@ -73,7 +86,7 @@ export async function queueReviewedComment(store,{opportunityId,message,schedule
   return store.mutate(db=>{
     const o=db.opportunities.find(o=>o.id===opportunityId);
     if(!o)throw Error('İnceleme kaydı bulunamadı.');
-    if(db.events.some(e=>e.kind==='private_comment'&&e.opportunityId===o.id))throw Error('Bu gönderi için zaten bir yorum işi var.');
+    if(db.events.some(e=>e.kind==='private_comment'&&(e.opportunityId===o.id||e.url?.replace(/\/+$/,'')===o.url?.replace(/\/+$/,''))))throw Error('Bu gönderi için zaten bir yorum işi var.');
     const event={id:randomUUID(),kind:'private_comment',opportunityId:o.id,url:o.url,message,approvedAt:new Date().toISOString(),expectedUsername,accountId,approvalMode,targetUsername:o.topic?.replace(/^@/,'')||'',scheduledAt:new Date(scheduledAt).toISOString(),status:'scheduled'};
     db.events.push(event);
     o.commentDraft=message;
@@ -87,12 +100,12 @@ export const DEFAULT_ENGAGEMENT={
   hashtags:[],
   minRelevance:85,
   maxCommentsPerDay:1,
-  maxLikesPerDay:40,
+  maxLikesPerDay:10,
   maxFollowsPerDay:20,
   autoSend:false,
-  autoLike:true,
-  autoFollow:true,
-  viewStories:true,
+  autoLike:false,
+  autoFollow:false,
+  viewStories:false,
   nightSleep:true
 };
 
@@ -102,15 +115,17 @@ export function validateEngagement(input){
     ...input,
     enabled:input.enabled===true,
     autoSend:input.autoSend===true,
-    autoLike:input.autoLike!==false,
-    autoFollow:input.autoFollow!==false,
-    viewStories:input.viewStories!==false,
+    autoLike:input.autoLike===true,
+    autoFollow:false,
+    viewStories:false,
     nightSleep:input.nightSleep!==false
   };
   value.hashtags=[...new Set((Array.isArray(input.hashtags)?input.hashtags:[]).map(x=>String(x).trim().replace(/^#/,'')))].filter(Boolean).slice(0,20);
   if(value.hashtags.some(x=>!/^([\p{L}\p{N}_]){1,80}$/u.test(x)))throw Error('Hashtaglerde yalnızca harf, sayı ve alt çizgi kullanın.');
   value.minRelevance=Number(value.minRelevance);
   value.maxCommentsPerDay=Number(value.maxCommentsPerDay);
+  value.maxLikesPerDay=Number(value.maxLikesPerDay);
+  if(!Number.isInteger(value.maxLikesPerDay)||value.maxLikesPerDay<1||value.maxLikesPerDay>20)throw Error('Günlük beğeni sınırı 1–20 arasında olmalı.');
   if(!Number.isFinite(value.minRelevance)||value.minRelevance<75||value.minRelevance>100)throw Error('Alaka eşiği 75–100 arasında olmalı.');
   if(!Number.isInteger(value.maxCommentsPerDay)||value.maxCommentsPerDay<1||value.maxCommentsPerDay>3)throw Error('Günlük yorum sınırı 1–3 arasında olmalı.');
   if(value.enabled&&(!value.accountId||!value.hashtags.length))throw Error('Otomatik keşif için hesap ve ilgili hashtagler gerekli.');
@@ -127,7 +142,7 @@ export function createDiscoveryAutomation(store,integrations,{call=privateCall,t
       if(!config.accountId||!config.hashtags.length)throw Error('Önce otomatik etkileşim kurallarını kaydedin.');
       const current=now();
       const today=dayInZone(current);
-      if(!manual&&(localInput(current).slice(11)<'09:00'||localInput(current).slice(11)>'23:00'||current.getTime()<nextCheck))return {skipped:'outside_window'};
+      if(!manual&&(localInput(current).slice(11)<'09:00'||localInput(current).slice(11)>'18:00'||current.getTime()<nextCheck))return {skipped:'outside_window'};
       const a=integrations.account(config.accountId);
       if(!a.verifiedAt||!a.username)throw Error('Otomatik etkileşim için marka hesabını önce doğrulayın.');
       const key=`auto-discovery:${a.id}:${today}`;
@@ -172,14 +187,7 @@ export function createDiscoveryAutomation(store,integrations,{call=privateCall,t
 
           if(store.read().opportunities.some(o=>o.url.replace('https://instagram.com','https://www.instagram.com').replace(/\/?$/,'/')===url))continue;
 
-          let assessment;
-          try{
-            assessment=await text(integrations.ai(),{task:'relevance',brief:'Konu/hashtag: '+tag,brand:store.read().brand,context:String(item.caption||'')});
-          }catch(aiErr){
-            const txt=(String(item.caption||'')+' '+tag).toLowerCase();
-            const isRel=['esnaf','işletme','isletme','dükkan','dukkan','kafe','cafe','restoran','lokasyon','harita','veri','analiz','müşteri','musteri','satış','satis','ticaret','sektör','sektor','girişim','girisim','mağaza','magaza','emlak','gayrimenkul'].some(w=>txt.includes(w));
-            assessment={text:JSON.stringify({relevant:isRel,score:isRel?91:35,reason:isRel?'İçerik işletme, lokasyon ve ticari dinamikler ile doğrudan ilgili.':'Marka konusuyla doğrudan ilgili değil.'})};
-          }
+          const assessment=await text(integrations.ai(),{task:'relevance',brief:'Konu/hashtag: '+tag,brand:store.read().brand,context:String(item.caption||'')});
           let relevance;
           try{relevance=JSON.parse(assessment.text)}catch{throw Error('AI alaka yanıtı geçerli JSON değildi. Otomatik yorum gönderilmedi.')}
           if(typeof relevance.relevant!=='boolean'||typeof relevance.score!=='number'||!Number.isFinite(relevance.score)||relevance.score<0||relevance.score>100||typeof relevance.reason!=='string')throw Error('AI alaka değerlendirmesi doğrulanamadı.');
@@ -189,21 +197,7 @@ export function createDiscoveryAutomation(store,integrations,{call=privateCall,t
             continue;
           }
 
-          // Otomatik Beğeni, Hikaye İzleme ve Takip (Organik Büyüme ve Profil Görünürlüğü)
-          if(config.autoLike!==false&&url){try{await call('like',{url})}catch(_){}}
-          if(config.viewStories!==false&&item.username){try{await call('story',{username:item.username})}catch(_){}}
-          if(config.autoFollow===true&&item.username){try{await call('follow',{username:item.username})}catch(_){}}
-
-          let draft;
-          try{
-            draft=await text(integrations.ai(),{task:'comment',brief:'Bu gönderinin somut konusuna katkı yapan doğal bir yorum yaz. Marka uzmanlığı yalnızca gerçekten ilgiliyse anılsın.',brand:store.read().brand,context:String(item.caption||'')});
-          }catch(aiErr){
-            const txt=String(item.caption||'').toLowerCase();
-            let msg='Sektörel kararlarda ve saha çalışmalarında doğrulanmış işletme verileriyle hareket etmek her zaman büyük zaman kazandırıyor. Çok yerinde bir paylaşım, kolaylıklar dileriz!';
-            if(txt.includes('kafe')||txt.includes('cafe')||txt.includes('restoran'))msg='Yeme-içme sektöründe lokasyon seçimi ve bölgedeki benzer işletme yoğunluğunu önceden analiz etmek başarı oranını çok ciddi artırıyor. Emeğinize sağlık, hayırlı işler dileriz!';
-            else if(txt.includes('esnaf')||txt.includes('dükkan')||txt.includes('mağaza'))msg='Doğru lokasyonda ve doğru hedef kitleye yakın noktada yer almak işletmeler için en kritik adım. Paylaşım için teşekkürler, bol kazançlar!';
-            draft={text:msg};
-          }
+          const draft=await text(integrations.ai(),{task:'comment',brief:'Bu gönderinin somut konusuna katkı yapan doğal bir yorum yaz. Marka uzmanlığı yalnızca gerçekten ilgiliyse anılsın. Kişisel deneyim veya ürün sonucu uydurma.',brand:store.read().brand,context:String(item.caption||'')});
           const message=String(draft.text||'').trim();
           if(!message||message.length>600||/(https?:\/\/|www\.)/i.test(message))throw Error('Yorum uzunluğu veya bağlantı içeriği otomatik gönderim kurallarına uymadı.');
           if(store.read().events.some(e=>e.kind==='private_comment'&&e.message?.trim().toLowerCase()===message.toLowerCase()))continue;
@@ -224,6 +218,7 @@ export function createDiscoveryAutomation(store,integrations,{call=privateCall,t
         return result;
       }catch(e){
         if(event)await store.mutate(db=>Object.assign(db.events.find(x=>x.id===event.id),{status:'reconciliation_required',error:e.message,finishedAt:new Date().toISOString()}));
+        if(!manual)await store.mutate(db=>{db.engagement={...db.engagement,enabled:false,autoSend:false,blockedReason:'Keşif veya yorum üretimi tamamlanamadı. Bağlantıyı kontrol edip kuralları yeniden etkinleştirin.'}});
         throw e;
       }finally{
         busy=false;

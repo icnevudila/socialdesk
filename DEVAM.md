@@ -1,3 +1,5 @@
+> GÜNCEL: 1 Kasım 2026 canlı kurulum ve kabul raporu `docs/SON_DURUM_2026-11-01.md` dosyasındadır. Aşağıdaki eski notlar tarihsel bağlamdır.
+
 # Socialdesk — Yeni sohbette devam dosyası
 
 ## İlk talimat

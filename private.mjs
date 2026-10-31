@@ -9,24 +9,6 @@ export async function privateCall(action,values={},options={}){
  const dir=options.dataDir||process.env.SOCIALDESK_DATA_DIR||path.join(root,'data');
  const python=options.pythonBin??[process.env.PYTHON_BIN,path.join(root,'.venv',process.platform==='win32'?'Scripts/python.exe':'bin/python')].find(p=>p&&existsSync(p));
  if(!python||process.env.VERCEL){
-   if(process.env.VERCEL){
-     if(action==='check')return {installed:true,available:true,sessionSaved:true,version:'3.2.2',mode:'serverless-hybrid'};
-     if(action==='analytics')return {
-       profile: { id: '51449058525', username: 'veriburada', followers_count: 0, follows_count: 0, media_count: 1, biography: 'Yerel İşletme ve Lokasyon Veri Analitiği' },
-       media: [
-         { id: '4019974356348104903', caption: 'Veriburada lokasyon analitiği ve saha araştırması', media_type: 'IMAGE', like_count: 0, comments_count: 0, permalink: 'https://www.instagram.com/veriburada/' }
-       ],
-       source: 'instagram-cloud-cache'
-     };
-     if(action==='discover'){
-       const cleanTag=String(values.tag||'isletme').replace(/^#/,'');
-       return {source:'instagram-discovery-feed',items:[
-         {id:'v-1',url:`https://www.instagram.com/p/DB1_${cleanTag}/`,username:`${cleanTag}_rehberi`,caption:`${cleanTag.toUpperCase()} için doğru lokasyon seçimi ve bölgedeki benzer işletmelerin analizi.`},
-         {id:'v-2',url:`https://www.instagram.com/p/DB2_${cleanTag}/`,username:`yerel_${cleanTag}`,caption:`Yeni şube açarken harita verileri ve işletme yoğunluğu analizi en kritik konu.`},
-         {id:'v-3',url:`https://www.instagram.com/p/DB3_${cleanTag}/`,username:`${cleanTag}_turkiye`,caption:`Saha araştırması yaparken doğrulanmış lokasyon verileri kullanmak büyük avantaj.`}
-       ]};
-     }
-   }
    if(action==='check')return {installed:false,available:false,sessionSaved:false,version:null,mode:'unavailable'};
    throw Error('Özel Instagram API ortamı bu sunucuda kurulu değil. Manuel inceleme listesini kullanabilirsiniz.');
  }

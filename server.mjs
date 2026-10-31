@@ -1,3 +1,4 @@
+import {balancedSchedule} from './publishing-policy.mjs';
 import {proxyCloudRequest} from './cloud-proxy.mjs';
 
 import http from 'node:http';
@@ -48,7 +49,7 @@ const defaultDataDir = process.env.VERCEL ? '/tmp/socialdesk-data' : path.join(r
 
 const dataDir=process.env.SOCIALDESK_DATA_DIR||defaultDataDir;
 
-const durable=!process.env.VERCEL;
+const durable=!process.env.VERCEL&&process.env.SOCIALDESK_PROXY_MODE!=='true';
 
 const schedulerEnabled=durable&&process.env.SOCIALDESK_DISABLE_SCHEDULER!=='true';
 
@@ -78,7 +79,8 @@ const server = http.createServer(async(req,res)=>{
 
   const requestPath=new URL(req.url,'http://local').pathname;
 
-  if(process.env.VERCEL&&(requestPath.startsWith('/api/')||requestPath.startsWith('/media/')))return proxyCloudRequest(req,res);
+  const publicAsset=/^\/media\/[\w-]+\.(jpg|jpeg|png|webp|mp4)$/i.test(requestPath)&&fs.existsSync(path.join(root,'public',requestPath.slice(1)));
+  if((process.env.VERCEL||process.env.SOCIALDESK_PROXY_MODE==='true')&&(requestPath.startsWith('/api/')||(requestPath.startsWith('/media/')&&!publicAsset)))return proxyCloudRequest(req,res);
 
   const effectiveHost = (bridgeAuthenticated(req)?req.headers['x-forwarded-host']:null) || req.headers.host || '';
 
@@ -274,6 +276,10 @@ const server = http.createServer(async(req,res)=>{
 
     if(p==='/api/growth/prepare-week'&&req.method==='POST'){const b=await body(req);const event=await planner.queueWeek(b.weekStart);if(!schedulerEnabled){await planner.runWeeklyOnce({force:true});}return json(res,201,event)}
 
+    if(p==='/api/growth/rebalance'&&req.method==='POST'){
+      const b=await body(req);if(b.confirmed!==true)throw Error('Yayın planını değiştirmek için açık onay gerekli.');integrations.account(b.accountId);
+      const result=await store.mutate(db=>{const plan=balancedSchedule(db.posts,b.accountId);for(const change of plan.changes){const post=db.posts.find(p=>p.id===change.id);post.scheduledAt=change.scheduledAt;post.updatedAt=new Date().toISOString()}db.growth={...db.growth,accountId:b.accountId,slots:['12:30'],publishAt:'12:30',weekdays:[0,1,2,3,4,5,6],schedulingPolicy:plan.mode};db.events.push({id:randomUUID(),kind:'schedule_rebalanced',accountId:b.accountId,status:'completed',createdAt:new Date().toISOString(),...plan});return {changed:plan.changes.length,policy:plan.mode,dailyLimit:plan.dailyLimit,confidence:plan.confidence}});return json(res,200,result);
+    }
     if(p==='/api/growth/prepare'&&req.method==='POST'){const b=await body(req);return json(res,200,await planner.runOnce({manual:true,targetDate:b.targetDate}))}
 
     if(p==='/api/automation/pause'&&req.method==='POST'){const b=await body(req);if(typeof b.paused!=='boolean')throw Error('Duraklatma durumu gerekli.');const result=await store.mutate(db=>db.automation={...db.automation,paused:b.paused,updatedAt:new Date().toISOString()});return json(res,200,result)}

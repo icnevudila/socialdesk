@@ -176,7 +176,8 @@
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
       "theme": "forest",
       "createdAt": "2026-10-31T21:22:54.194Z",
-      "updatedAt": "2026-10-31T21:22:54.195Z"
+      "updatedAt": "2026-10-31T21:22:54.195Z",
+      "thumbnailUrl": "/media/video2_thumb.jpg"
     },
     {
       "id": "646c8a12-bafd-458a-a853-78ee21b85472",
@@ -241,7 +242,8 @@
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
       "theme": "forest",
       "createdAt": "2026-10-31T21:22:54.195Z",
-      "updatedAt": "2026-10-31T21:22:54.195Z"
+      "updatedAt": "2026-10-31T21:22:54.195Z",
+      "thumbnailUrl": "/media/video3_thumb.jpg"
     },
     {
       "id": "e9f2bda0-0417-469b-8844-801db2e9e696",
@@ -265,7 +267,8 @@
       "scheduledAt": "2026-11-10T09:00:00.000Z",
       "mediaUrl": "https://socialdesk-sage.vercel.app/media/veriburada_tanitim_reel.mp4",
       "theme": "forest",
-      "createdAt": "2026-10-30T22:04:23.238Z"
+      "createdAt": "2026-10-30T22:04:23.238Z",
+      "thumbnailUrl": "/media/veriburada_tanitim_reel_thumb.jpg"
     },
     {
       "id": "09182be7-ed01-4f70-aa36-ec9f7f73dd2b",
@@ -305,7 +308,8 @@
       "accountId": "016c1c8f-1d53-4264-8668-87bacef67d0e",
       "theme": "forest",
       "createdAt": "2026-10-31T21:22:54.195Z",
-      "updatedAt": "2026-10-31T21:22:54.195Z"
+      "updatedAt": "2026-10-31T21:22:54.195Z",
+      "thumbnailUrl": "/media/video4_thumb.jpg"
     },
     {
       "id": "183d9d40-55fc-4cb7-9d82-d9d9c16172df",

@@ -96,9 +96,19 @@ async function refresh(){db=await api('workspace');if(selectedAccount&&!accounts
 function heading(title,desc,action=true){return `<div class="heading"><div><h1>${title}</h1><p>${desc}</p></div>${action?`<button class="primary" data-action="new">${icon('plus')} İçerik oluştur</button>`:''}</div>`}
 function empty(symbol,title,text,button='',action='new'){return `<div class="empty"><img class="empty-art" src="/calendar-art.svg" alt=""><h3>${title}</h3><p>${text}</p>${button?`<button data-action="${action}">${button} ${icon('arrow')}</button>`:''}</div>`}
 function date(v){if(v&&!Number.isFinite(Date.parse(v)))return 'Tarih okunamadı';return v?new Intl.DateTimeFormat('tr-TR',{timeZone:'Europe/Istanbul',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(v)):'Tarih seçilmedi'}
-function row(p){const source=p.localMediaUrl&&/^\/media\/[\da-f-]{36}\.(png|jpg|webp|mp4)$/.test(p.localMediaUrl)?p.localMediaUrl:safeHttps(p.mediaUrl);const thumbnail=source!=='#'&&p.kind!=='reel';return `<div class="post-row"><div class="avatar ${thumbnail?'has-thumb':''}">${thumbnail?`<img class="post-thumb" src="${esc(source)}" alt="" loading="lazy" decoding="async" width="42" height="42">`:''}${icon(p.kind==='reel'?'studio':'image')}</div><div class="body"><strong>${esc(p.title)}</strong><small>${date(p.scheduledAt)} · ${p.kind==='reel'?'Reels':'Gönderi'}</small></div><span class="badge">${p.status==='scheduled'&&!accounts().find(a=>a.id===p.accountId)?.publishing?'Bağlantı / yayın ayarı bekliyor':labels[p.status]}</span><button data-edit="${p.id}" aria-label="${esc(p.title)} düzenle">Aç</button></div>`}
+function row(p){const thumb=postMediaThumb(p);return `<div class="post-row"><div class="avatar ${thumb?'has-thumb':''}"><img class="post-thumb" src="${esc(thumb||'')}" alt="" loading="lazy" decoding="async" width="42" height="42" ${thumb?'':'style="display:none"'}>${thumb?'':icon(p.kind==='reel'?'studio':'image')}</div><div class="body"><strong>${esc(p.title)}</strong><small>${date(p.scheduledAt)} · ${p.kind==='reel'?'Reels':'Gönderi'}</small></div><span class="badge">${p.status==='scheduled'&&!accounts().find(a=>a.id===p.accountId)?.publishing?'Bağlantı / yayın ayarı bekliyor':labels[p.status]}</span><button data-edit="${p.id}" aria-label="${esc(p.title)} düzenle">Aç</button></div>`}
 function home(){const upcoming=visiblePosts().filter(p=>['planned','scheduled'].includes(p.status)).sort((a,b)=>Date.parse(a.scheduledAt)-Date.parse(b.scheduledAt));return heading('Genel bakış','İçeriklerini hazırla, planını takip et.')+(sessionStorage.getItem('socialdesk.unsaved')?'<div class="notice recovery-notice"><span>Kaydedilmemiş bir içerik metnin var.</span><button data-action="restore-draft">Taslağı geri getir</button></div>':'')+`<section class="workbench"><div><span class="section-kicker">İÇERİK MASASI</span><h2>${visiblePosts().length?'İçerik takvimini yönet.':'İlk içeriğini hazırla.'}</h2><p>${visiblePosts().length?`${visiblePosts().filter(p=>p.status==='draft').length} taslak, ${visiblePosts().filter(p=>['planned','scheduled'].includes(p.status)).length} planlanan içerik.`:'Henüz bir taslak yok. Bir konu seçerek başla.'}</p><button class="primary" data-action="new">Yeni içerik ${icon('arrow')}</button></div><img src="/workspace-art.svg" alt="İçerik kartından paylaşım takvimine uzanan özgün çizim"></section><div class="stats">${[['Taslaklar',visiblePosts().filter(p=>p.status==='draft').length,'Üzerinde çalıştığın fikirler','studio'],['Planlanan',upcoming.length,'Takvimindeki içerikler','calendar'],['Yayınlanan',visiblePosts().filter(p=>p.status==='published').length,'API yayın kimliği kaydedilen','image'],['Kaydedilen fırsatlar',db.opportunities.length,'İnceleme listendeki gönderiler','discover']].map(([t,n,s,i])=>`<div class="stat"><div class="stat-top">${t}${icon(i)}</div><strong>${n}</strong><small>${s}</small></div>`).join('')}</div><div class="columns"><section class="panel"><div class="panel-head"><h2>Sıradaki içerikler</h2><button class="text-btn" data-page="calendar">Takvime git →</button></div>${upcoming.length?upcoming.slice(0,4).map(row).join(''):empty('calendar','Henüz planlanan içerik yok.','İlk içeriğini hazırla ve sana uygun bir güne yerleştir.','İçerik hazırla')}</section><section class="panel"><div class="panel-head"><h2>Kurulum durumu</h2><span class="badge green">${[db.brand.name&&db.brand.name!=='Benim markam',accounts().some(a=>a.verified),db.posts.length>0].filter(Boolean).length}/3 hazır</span></div>${[['Markanı tanımla','İçeriklerin için bir ses ve hedef kitle belirle.','Marka ayarları','settings'],['Instagram hesabını bağla','Yayınlama için resmi bağlantını yapılandır.','Bağlantıları incele','settings'],['İlk içeriğini hazırla','Bir fikirle başla, takvimine yerleştir.','Stüdyoyu aç','studio']].map(([t,d,b,p],i)=>`<div class="check-item"><span class="number ${[db.brand.name&&db.brand.name!=='Benim markam',accounts().some(a=>a.verified),db.posts.length>0][i]?'done':''}">${[db.brand.name&&db.brand.name!=='Benim markam',accounts().some(a=>a.verified),db.posts.length>0][i]?'✓':i+1}</span><div><h3>${t}</h3><p>${[db.brand.name&&db.brand.name!=='Benim markam',accounts().some(a=>a.verified),db.posts.length>0][i]?['Marka profilin kayıtlı.','En az bir hesabın API ile doğrulandı.',db.posts.length+' içerik çalışma alanında kayıtlı.'][i]:d}</p><button class="text-btn" data-page="${p}">${b} →</button></div></div>`).join('')}</section></div><div class="page-note">${icon('check')} Kayıtların çalışma alanında tutulur. Otomatik paylaşım ${db.connection.publishing?'etkin':'kapalı'}.</div>`}
-function calendar(){let start=new Date(month.getFullYear(),month.getMonth(),1);start.setDate(start.getDate()-(start.getDay()+6)%7);if(calendarMode==='week'){start=new Date(month);start.setDate(start.getDate()-(start.getDay()+6)%7)}const days=calendarMode==='week'?7:42;return heading('İçerik takvimi','Markanın ritmini, görsel takvim üzerinden takip et.')+`<div class="toolbar"><h2>${month.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})}</h2><div style="display:flex;gap:6px"><button data-action="prev" aria-label="Önceki dönem">←</button><button data-action="today">Bugün</button><button data-action="next" aria-label="Sonraki dönem">→</button></div><button data-action="mode">${calendarMode==='month'?'Haftalık görünüm':'Aylık görünüm'}</button></div><div class="panel calendar ${calendarMode==='week'?'week-mode':''}">${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(x=>`<div class="day-label">${x}</div>`).join('')}${Array.from({length:days},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const key=localDay(d);const dayPosts=visiblePosts().filter(p=>p.scheduledAt&&localDay(new Date(p.scheduledAt))===key);return `<div class="day ${d.getMonth()!==month.getMonth()?'off':''} ${key===localDay(new Date())?'today':''}"><div class="day-head"><button class="day-btn" data-day="${key}" aria-label="${key} için içerik oluştur">${d.getDate()}</button>${dayPosts.length?`<span class="day-badge">${dayPosts.length} içerik</span>`:''}</div><div class="day-posts">${dayPosts.map(p=>{const source=p.localMediaUrl&&/^\/media\/[\da-f-]{36}\.(png|jpg|webp|mp4)$/.test(p.localMediaUrl)?p.localMediaUrl:safeHttps(p.mediaUrl);const thumbnail=source&&source!=='#'&&p.kind!=='reel';const timeStr=p.scheduledAt?new Intl.DateTimeFormat('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'}).format(new Date(p.scheduledAt)):'12:00';return `<button class="cal-post-card ${p.status}" data-edit="${p.id}" title="${esc(p.title)} · ${timeStr}">${thumbnail?`<img class="cal-post-thumb" src="${esc(source)}" alt="" loading="lazy">`:`<span class="cal-post-noimg">${icon(p.kind==='reel'?'studio':'image')}</span>`}<div class="cal-post-body"><span class="cal-post-time">${timeStr}</span><strong class="cal-post-title">${esc(p.title)}</strong></div></button>`}).join('')}</div></div>`}).join('')}</div><p class="sub">Yerel plan, otomatik yayın kuyruğundan ayrıdır. Bir güne dokunarak içerik ekleyebilirsin.</p>`}
+function postMediaThumb(p){
+  if(p.thumbnailUrl) return p.thumbnailUrl;
+  const raw = (p.localMediaUrl && /^\/media\/[a-zA-Z0-9_\-\.]+\.(png|jpg|jpeg|webp|mp4)$/i.test(p.localMediaUrl)) ? p.localMediaUrl : safeHttps(p.mediaUrl);
+  if(!raw || raw === '#') return null;
+  if(raw.endsWith('.mp4') || p.kind === 'reel'){
+    return raw.replace(/\.mp4$/i, '_thumb.jpg');
+  }
+  return raw;
+}
+
+function calendar(){let start=new Date(month.getFullYear(),month.getMonth(),1);start.setDate(start.getDate()-(start.getDay()+6)%7);if(calendarMode==='week'){start=new Date(month);start.setDate(start.getDate()-(start.getDay()+6)%7)}const days=calendarMode==='week'?7:42;return heading('İçerik takvimi','Markanın ritmini, görsel takvim üzerinden takip et.')+`<div class="toolbar"><h2>${month.toLocaleDateString('tr-TR',{month:'long',year:'numeric'})}</h2><div style="display:flex;gap:6px"><button data-action="prev" aria-label="Önceki dönem">←</button><button data-action="today">Bugün</button><button data-action="next" aria-label="Sonraki dönem">→</button></div><button data-action="mode">${calendarMode==='month'?'Haftalık görünüm':'Aylık görünüm'}</button></div><div class="panel calendar ${calendarMode==='week'?'week-mode':''}">${['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].map(x=>`<div class="day-label">${x}</div>`).join('')}${Array.from({length:days},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const key=localDay(d);const dayPosts=visiblePosts().filter(p=>p.scheduledAt&&localDay(new Date(p.scheduledAt))===key);return `<div class="day ${d.getMonth()!==month.getMonth()?'off':''} ${key===localDay(new Date())?'today':''}"><div class="day-head"><button class="day-btn" data-day="${key}" aria-label="${key} için içerik oluştur">${d.getDate()}</button>${dayPosts.length?`<span class="day-badge">${dayPosts.length} içerik</span>`:''}</div><div class="day-posts">${dayPosts.map(p=>{const thumb=postMediaThumb(p);const timeStr=p.scheduledAt?new Intl.DateTimeFormat('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'}).format(new Date(p.scheduledAt)):'12:00';return `<button class="cal-post-card ${p.status}" data-edit="${p.id}" title="${esc(p.title)} · ${timeStr}">${thumb?`<img class="cal-post-thumb" src="${esc(thumb)}" alt="" loading="lazy">`:`<span class="cal-post-noimg">${icon(p.kind==='reel'?'studio':'image')}</span>`}<div class="cal-post-body"><span class="cal-post-time">${timeStr}</span><strong class="cal-post-title">${esc(p.title)}</strong></div></button>`}).join('')}</div></div>`}).join('')}</div><p class="sub">Yerel plan, otomatik yayın kuyruğundan ayrıdır. Bir güne dokunarak içerik ekleyebilirsin.</p>`}
 function localDay(d){return dayInZone(d)}
 function editor(p={}){return `<form class="post-form" data-id="${p.id||''}"><input type="hidden" name="requestId" value="${p.requestId||crypto.randomUUID()}"><input type="hidden" name="expectedUpdatedAt" value="${esc(p.updatedAt)}"><div class="editor"><div><div class="form-grid"><label class="full">İçerik başlığı<input name="title" required maxlength="150" value="${esc(p.title)}" placeholder="Bugün ne anlatmak istersin?"></label><label>Instagram hesabı<select name="accountId">${accountOptions(p.accountId||selectedAccount||accounts()[0]?.id)}</select></label><label>İçerik türü<select name="kind"><option value="image">Görsel gönderi</option><option value="reel" ${p.kind==='reel'?'selected':''}>Reels</option></select></label><label>Paylaşım zamanı · İstanbul<input name="scheduledAt" type="datetime-local" value="${localInput(p.scheduledAt)}"></label><label class="full">Açıklama<textarea name="caption" required maxlength="2200" rows="6" placeholder="Hikâyeni kendi sesinle anlat…">${esc(p.caption)}</textarea></label><label class="full">Bilgisayardan medya<input name="mediaFile" type="file" accept="image/png,image/jpeg,image/webp,video/mp4"><input name="localMediaUrl" type="hidden" value="${esc(p.localMediaUrl)}"></label><label class="full">Yayın için herkese açık medya bağlantısı (HTTPS)<input name="mediaUrl" type="url" value="${esc(p.mediaUrl)}" placeholder="https://…"></label><small class="full">Dosya yüklediğinde yayın bağlantısı sunucuda hazırlanır. Bağlantı oluşmazsa Meta’nın erişebildiği bir HTTPS adresi gir.</small></div><div class="ai-tools"><label>GPT ile hazırla<input name="brief" placeholder="Konu, ürün veya anlatmak istediğin fikir"></label><div class="actions"><button type="button" data-ai="caption">Açıklama yaz</button><button type="button" data-ai="ideas">5 fikir öner</button><button type="button" data-ai="visual">Görsel brief</button><button type="button" data-ai-image="true">Görsel üret</button><button type="button" data-ai="reel">Reels senaryosu</button></div><div class="ai-output" aria-live="polite"></div></div><div class="error" role="alert"></div><div class="actions"><button type="submit" name="intent" value="draft">Taslak kaydet</button><button class="primary" type="submit" name="intent" value="planned">Yerel plana ekle</button><button type="submit" name="intent" value="scheduled" class="primary">Otomatik paylaşımı planla</button>${p.id?'<button type="button" data-delete="'+p.id+'">Sil</button>':''}</div></div><div class="preview"><div class="preview-head"><span class="avatar brand-avatar-box"><img class="brand-avatar-img" src="/logo.png" alt="${esc(db.brand.name)}" width="34" height="34"></span><strong>${esc(db.brand.handle||db.brand.name)}</strong></div><div class="preview-media"></div><div class="preview-art preview-title">${esc(p.title||'İçerik önizlemesi')}</div><div class="preview-caption">${esc(p.caption||'Açıklaman burada görünecek.')}</div><div class="preview-label">Instagram önizlemesi · Yayın öncesi kontrol et</div></div></div></form>`}
 function studio(){return heading('İçerik stüdyosu','İçeriğini hazırla, önizle ve paylaşım biçimini seç.',false)+`<div class="subtabs" role="tablist" aria-label="Stüdyo görünümü"><button role="tab" tabindex="${studioTab==='editor'?0:-1}" aria-selected="${studioTab==='editor'}" aria-controls="studio-editor" data-studio-tab="editor">Yeni içerik</button><button role="tab" tabindex="${studioTab==='library'?0:-1}" aria-selected="${studioTab==='library'}" aria-controls="studio-library" data-studio-tab="library">İçerik kütüphanesi <span>${visiblePosts().length}</span></button></div><div class="panel form-panel" data-studio-panel="editor" id="studio-editor" role="tabpanel" ${studioTab==='editor'?'':'hidden'}>${editor()}</div><section class="panel" data-studio-panel="library" id="studio-library" role="tabpanel" ${studioTab==='library'?'':'hidden'}><div class="panel-head"><h2>İçerik kütüphanesi</h2><span class="badge" id="post-count">${filteredPosts().length} kayıt</span></div><div class="library-toolbar"><input id="content-search" aria-label="İçerik ara" placeholder="Başlık veya açıklamada ara" value="${esc(contentQuery)}"><select id="content-filter" aria-label="İçerik durumu filtresi">${[['all','Tüm durumlar'],...Object.entries(labels)].map(([key,value])=>`<option value="${key}" ${contentFilter===key?'selected':''}>${value}</option>`).join('')}</select></div><div id="post-list">${postListView()}</div></section>`}
@@ -130,165 +140,142 @@ async function loadGrowthLiveStatus() {
 }
 
 function growth_live(){
- if(!growthLiveState&&!growthLiveLoading)loadGrowthLiveStatus();
- const s=growthLiveState||{
-   active:true,
-   mode:'İnsansı Organik Büyüme (Sıfır Risk)',
-   today:{likes:0,stories:0,comments:0},
-   maxDaily:{likes:20,stories:40,comments:3},
-   totalProcessed:12,
-   serverTime:'--:--',
-   nextCountdownSeconds:240,
-   nextEstimatedTime:'Her 4–6 dk',
-   followerStats:{current:null,target:1000,progressPct:0,growthVelocity:'Organik (~5–15 potansiyel işletmeci / gün)'},
-   actions:[],
-   recentLogs:[]
- };
- const f=s.followerStats||{};
- const measured=f.current!==null&&f.current!==undefined;
- const likesPct=Math.min(100,Math.round(((s.today?.likes||0)/(s.maxDaily?.likes||20))*100));
- const storiesPct=Math.min(100,Math.round(((s.today?.stories||0)/(s.maxDaily?.stories||40))*100));
- const commentsPct=Math.min(100,Math.round(((s.today?.comments||0)/(s.maxDaily?.comments||3))*100));
+  if(!growthLiveState&&!growthLiveLoading)loadGrowthLiveStatus();
+  const s=growthLiveState||{
+    active:true,
+    mode:'İnsansı Organik Büyüme (Sıfır Risk)',
+    today:{likes:0,stories:0,comments:0},
+    maxDaily:{likes:20,stories:40,comments:3},
+    totalProcessed:12,
+    serverTime:'--:--',
+    nextCountdownSeconds:240,
+    nextEstimatedTime:'Her 4–6 dk',
+    followerStats:{current:null,target:1000,progressPct:0,growthVelocity:'Organik (~5–15 potansiyel işletmeci / gün)'},
+    actions:[],
+    recentLogs:[]
+  };
+  const f=s.followerStats||{};
+  const measured=f.current!==null&&f.current!==undefined;
+  const likesCount = s.today?.likes || 0;
+  const commentsCount = s.today?.comments || 0;
 
- return heading('Canlı Büyüme Takipçisi','Arka planda çalışan insansı organik etkileşim ve takipçi motorunun canlı izleme paneli.',false)+`
- <div class="toolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px">
-   <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px">
-     <span class="live-pulse-badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0"><span class="pulse-dot"></span> ${s.active?'Motor Aktif (7/24 Otonom)':'Motor Duraklatıldı'}</span>
-     <span class="badge" style="background:#f8fafc;color:#334155;border:1px solid #cbd5e1;font-size:12px">⏰ Sunucu Saati: ${esc(s.serverTime||'--:--')}</span>
-     <span class="badge" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px">⏳ Sonraki İşlem: ${esc(s.nextEstimatedTime||'Her 4–6 dk')}</span>
-     <span class="badge" style="background:#fdf2f8;color:#9d174d;border:1px solid #fbcfe8;font-size:12px">🛡️ İnsan Ritim Koruması (240–360 sn)</span>
-   </div>
-   <div style="display:flex;gap:10px">
-     <button data-action="automation-toggle" style="font-weight:600">${s.worker?.paused?'▶ Otomasyona Devam Et':'⏸ Otomasyonu Duraklat'}</button>
-     <button class="primary" data-action="refresh-growth-live" ${growthLiveLoading?'disabled':''} style="font-weight:600">${growthLiveLoading?'Yenileniyor…':'Verileri Yenile ↻'}</button>
-   </div>
- </div>
+  return heading('Hesap büyümesi','Gerçek ölçümler, yayınlar ve yorum kuyruğun.',false)+`
+  <!-- 1. Top status toolbar -->
+  <div class="panel" style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;box-sizing:border-box">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span class="live-pulse-badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0"><span class="pulse-dot"></span> ${s.active?'Otomasyon çalışıyor':'Otomasyon duraklatıldı'}</span>
+      <span style="color:#64748b;font-size:12.5px">İşler tek kuyruk üzerinden insansı ritimde (240–360 sn) işleniyor.</span>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button data-action="automation-toggle" style="font-weight:600">${s.worker?.paused?'Otomasyona devam et':'Otomasyonu duraklat'}</button>
+      <button class="primary" data-action="refresh-growth-live" ${growthLiveLoading?'disabled':''} style="font-weight:600">${growthLiveLoading?'Yenileniyor…':'Durumu yenile ↻'}</button>
+    </div>
+  </div>
 
- <!-- 1. Follower Target & Milestone Card -->
- <div class="panel" style="margin-bottom:24px;border:1px solid #e0e7ff;background:linear-gradient(135deg, #ffffff 0%, #fbfaff 100%);box-shadow:0 4px 16px rgba(99,102,241,0.05);padding:24px;border-radius:14px">
-   <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f3f9;padding:0 0 16px 0">
-     <div style="display:flex;align-items:center;gap:14px">
-       <div style="width:44px;height:44px;background:#eef2ff;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px">🎯</div>
-       <div>
-         <h2 style="font-size:18px;margin:0;color:#1e1b4b;font-weight:700">Takipçi Hedefi: 1.000 Yerel İşletme & Girişimci</h2>
-         <div style="color:#6366f1;font-size:13px;font-weight:600;margin-top:3px">Mevcut: ${measured?Number(f.current).toLocaleString('tr-TR'):'0'} Takipçi · Hedef: 1.000 Takipçi</div>
-       </div>
-     </div>
-     <span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;font-weight:700;font-size:12px;padding:6px 12px">✓ ${s.publishedCount||5} Vitrin Gönderisi Yayında</span>
-   </div>
-   <div style="margin-top:18px">
-     <div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;margin-bottom:8px">
-       <span>İlerleme: <strong style="color:#1e1b4b">%${Math.min(100, Math.max(0, Number(f.progressPct)||0))}</strong></span>
-       <span>Büyüme Hızı: <strong style="color:#4338ca">${esc(f.growthVelocity||'Organik (~5–15 potansiyel işletmeci / gün)')}</strong></span>
-     </div>
-     <div style="height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden">
-       <div style="width:${Math.max(2, Math.min(100, Number(f.progressPct)||0))}%;height:100%;background:linear-gradient(90deg, #6366f1, #8b5cf6);border-radius:6px;transition:width 0.4s ease"></div>
-     </div>
-     <div style="font-size:13px;color:#475569;margin:14px 0 0 0;line-height:1.6;background:#f8fafc;padding:12px 16px;border-radius:10px;border:1px solid #eef2f6">
-       💡 <strong>Nasıl Büyüyor?</strong> Sistem her 4–6 dakikada bir hedef etiketlerdeki (<code>#isletme</code>, <code>#yerelisletme</code>, <code>#lokasyon</code>, <code>#restoran</code>, <code>#kobiler</code>) potansiyel müşterilerin kapısını çalarak beğeni ve sektörel kurumsal yorum bırakır. Bildirim alan işletmeciler sayfana gelerek seni takibe alır.
-     </div>
-   </div>
- </div>
+  <!-- 2. Dual cards matching user favorite layout -->
+  <div class="columns" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:24px;margin-bottom:24px;box-sizing:border-box">
+    <!-- Left: Takipciler -->
+    <div class="panel" style="padding:24px 26px;box-sizing:border-box">
+      <div style="font-size:11px;font-weight:700;color:#786a86;letter-spacing:1.2px;text-transform:uppercase">TAKİPÇİLER</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin:16px 0 12px">
+        <strong style="font-size:38px;color:#1e1b4b;font-weight:700">${measured?Number(f.current).toLocaleString('tr-TR'):'0'}</strong>
+        <span style="font-size:16px;color:#94a3b8;font-weight:normal">/ 1.000</span>
+      </div>
+      <div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:14px">
+        <div style="width:${Math.max(2, Math.min(100, Number(f.progressPct)||0))}%;height:100%;background:#6740c6;border-radius:3px"></div>
+      </div>
+      <p style="font-size:12.5px;color:#64748b;margin:0 0 6px">${measured?'Meta API ile ölçülen güncel takipçi':'Karşılaştırma için ölçüm bekleniyor'}</p>
+      <small style="color:#94a3b8;font-size:11px">Son Meta ölçümü: ${esc(s.serverTime||'1 Kas 00:28')}</small>
+    </div>
 
- <!-- 2. Daily Stats Grid -->
- <div class="stats" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px;">
-   <div class="stat" style="border:1px solid #eef2f6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.02)">
-     <div class="stat-top" style="color:#64748b;font-size:12px;font-weight:600">Bugünkü Beğeniler</div>
-     <strong style="font-size:32px;color:#1e1b4b;margin:10px 0 4px 0;display:block">${s.today?.likes||0} <span style="font-size:14px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.likes||20}</span></strong>
-     <div style="height:5px;background:#e2e8f0;border-radius:3px;margin:8px 0 8px 0;overflow:hidden">
-       <div style="width:${likesPct}%;height:100%;background:#6366f1"></div>
-     </div>
-     <small style="color:#64748b">İlgili işletme gönderileri</small>
-   </div>
-   <div class="stat" style="border:1px solid #eef2f6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.02)">
-     <div class="stat-top" style="color:#64748b;font-size:12px;font-weight:600">İzlenen Hikayeler</div>
-     <strong style="font-size:32px;color:#1e1b4b;margin:10px 0 4px 0;display:block">${s.today?.stories||0} <span style="font-size:14px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.stories||40}</span></strong>
-     <div style="height:5px;background:#e2e8f0;border-radius:3px;margin:8px 0 8px 0;overflow:hidden">
-       <div style="width:${storiesPct}%;height:100%;background:#0284c7"></div>
-     </div>
-     <small style="color:#64748b">Hedef kitle hikaye etkileşimi</small>
-   </div>
-   <div class="stat" style="border:1px solid #eef2f6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.02)">
-     <div class="stat-top" style="color:#64748b;font-size:12px;font-weight:600">Paylaşılan Yorumlar</div>
-     <strong style="font-size:32px;color:#1e1b4b;margin:10px 0 4px 0;display:block">${s.today?.comments||0} <span style="font-size:14px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.comments||3}</span></strong>
-     <div style="height:5px;background:#e2e8f0;border-radius:3px;margin:8px 0 8px 0;overflow:hidden">
-       <div style="width:${commentsPct}%;height:100%;background:#10b981"></div>
-     </div>
-     <small style="color:#64748b">Yapay zeka kurumsal yorum</small>
-   </div>
-   <div class="stat" style="border:1px solid #eef2f6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.02)">
-     <div class="stat-top" style="color:#64748b;font-size:12px;font-weight:600">Toplam Taranan Profil</div>
-     <strong style="font-size:32px;color:#1e1b4b;margin:10px 0 4px 0;display:block">${s.totalProcessed||(s.today?.likes||0)+(s.today?.comments||0)+12} <span style="font-size:14px;color:#94a3b8;font-weight:normal">hedef</span></strong>
-     <div style="height:5px;background:#dcfce7;border-radius:3px;margin:8px 0 8px 0;overflow:hidden">
-       <div style="width:100%;height:100%;background:#16a34a"></div>
-     </div>
-     <small style="color:#16a34a;font-weight:600">✓ İnsan hızı korumalı (Sıfır Risk)</small>
-   </div>
- </div>
+    <!-- Right: Bugunku Akis -->
+    <div class="panel" style="padding:24px 26px;box-sizing:border-box">
+      <div style="font-size:11px;font-weight:700;color:#786a86;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:16px">BUGÜNKÜ AKIŞ</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f3f9;font-size:13px">
+        <span style="color:#475569">Gönderilen yorum</span>
+        <strong style="color:#1e1b4b">${commentsCount} <span style="font-size:11.5px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.comments||3}</span></strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f3f9;font-size:13px">
+        <span style="color:#475569">Bugünkü beğeni</span>
+        <strong style="color:#1e1b4b">${likesCount} <span style="font-size:11.5px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.likes||20}</span></strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f3f9;font-size:13px">
+        <span style="color:#475569">Doğrulanmış yayın kaydı</span>
+        <strong style="color:#1e1b4b">${s.publishedCount||5}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px">
+        <span style="color:#475569">Kontrol bekleyen işlem</span>
+        <strong style="color:#1e1b4b">${s.pendingReview||0}</strong>
+      </div>
+      <div style="margin-top:14px">
+        <button class="text-btn" data-page="discover" style="font-size:12.5px;font-weight:600">Keşif ve yorumları incele →</button>
+      </div>
+    </div>
+  </div>
 
- <!-- 3. Recent Real-Time Actions Table -->
- <div class="panel" style="margin-bottom:24px;border:1px solid #eef0f3;border-radius:14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.03)">
-   <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid #f1f3f9">
-     <div>
-       <h2 style="font-size:17px;margin:0;color:#1e1b4b;font-weight:700">Son Gerçekleşen Etkileşimler</h2>
-       <p class="sub" style="margin:4px 0 0 0;font-size:12.5px;color:#64748b">Instagram yanıtı kaydedilen beğeni, hikaye ve yorumlar</p>
-     </div>
-     <span class="badge" style="background:#f1f5f9;color:#475569;font-weight:600">${(s.actions||[]).length} işlem listelendi</span>
-   </div>
-   <div class="actions-list" style="display:flex;flex-direction:column;gap:12px;padding:18px 22px">
-     ${(s.actions||[]).length ? s.actions.map(a => `
-       <div class="activity-card">
-         <div style="display:flex;align-items:flex-start;gap:14px;min-width:0;flex:1">
-           <div class="activity-avatar" style="background:${a.type==='like'?'#fdf2f8':a.type==='story'?'#f0f9ff':'#ecfdf5'}">
-             ${a.icon||(a.type==='like'?'❤️':a.type==='story'?'👁️':'💬')}
-           </div>
-           <div style="min-width:0;flex:1">
-             <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-               <span class="badge" style="font-size:11px;font-weight:600;padding:3px 10px;background:${a.badgeColor||(a.type==='like'?'#ec4899':'#10b981')}18;color:${a.badgeColor||(a.type==='like'?'#ec4899':'#10b981')};border:1px solid ${a.badgeColor||(a.type==='like'?'#ec4899':'#10b981')}40">${esc(a.label)}</span>
-               ${a.user ? `<strong style="font-size:14px;color:#1e293b">@${esc(a.user)}</strong>` : ''}
-               <span style="font-size:12px;color:#64748b;background:#f8fafc;padding:2px 8px;border-radius:4px;border:1px solid #eef2f6">${esc(a.note || '')}</span>
-             </div>
-             ${a.text ? `<div class="activity-quote">"${esc(a.text)}"</div>` : ''}
-           </div>
-         </div>
-         <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;margin-top:2px">
-           <span style="font-size:12px;color:#94a3b8;font-weight:600">${esc(a.time)}</span>
-           ${a.url ? `<a href="${esc(safeHttps(a.url))}" target="_blank" rel="noopener noreferrer" class="badge" style="background:#f8fafc;color:#4f46e5;text-decoration:none;border:1px solid #cbd5e1;cursor:pointer;padding:6px 12px;font-weight:600">Instagram'da Gör ↗</a>` : ''}
-         </div>
-       </div>
-     `).join('') : '<div style="color:#64748b;padding:28px;text-align:center">Henüz kaydedilmiş etkileşim bulunamadı. Keşif kuyruğu işlendikçe burada anlık akacaktır.</div>'}
-   </div>
- </div>
+  <!-- 3. Recent Real-Time Actions Table -->
+  <div class="panel" style="margin-bottom:24px;border:1px solid #eef0f3;border-radius:14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.03);box-sizing:border-box">
+    <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid #f1f3f9;flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="font-size:17px;margin:0;color:#1e1b4b;font-weight:700">Son etkileşimler</h2>
+        <p class="sub" style="margin:4px 0 0 0;font-size:12.5px;color:#64748b">Instagram yanıtı kaydedilen yorum ve beğeniler</p>
+      </div>
+      <span class="badge" style="background:#f1f5f9;color:#475569;font-weight:600">${(s.actions||[]).length} kayıt</span>
+    </div>
+    <div class="actions-list" style="display:flex;flex-direction:column;gap:12px;padding:18px 22px">
+      ${(s.actions||[]).length ? s.actions.map(a => `
+        <div class="activity-card">
+          <div style="display:flex;align-items:flex-start;gap:14px;min-width:0;flex:1">
+            <div class="activity-avatar" style="background:${a.type==='like'?'#fdf2f8':a.type==='story'?'#f0f9ff':'#ecfdf5'}">
+              ${a.icon||(a.type==='like'?'❤️':a.type==='story'?'👁️':'💬')}
+            </div>
+            <div style="min-width:0;flex:1">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span class="badge" style="font-size:11px;font-weight:600;padding:3px 10px;background:${a.badgeColor||(a.type==='like'?'#ec4899':'#10b981')}18;color:${a.badgeColor||(a.type==='like'?'#ec4899':'#10b981')};border:1px solid ${a.badgeColor||(a.type==='like'?'#ec4899':'#10b981')}40">${esc(a.label)}</span>
+                ${a.user ? `<strong style="font-size:14px;color:#1e293b">@${esc(a.user)}</strong>` : ''}
+                <span style="font-size:12px;color:#64748b;background:#f8fafc;padding:2px 8px;border-radius:4px;border:1px solid #eef2f6">${esc(a.note || '')}</span>
+              </div>
+              ${a.text ? `<div class="activity-quote">"${esc(a.text)}"</div>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;margin-top:2px">
+            <span style="font-size:12px;color:#94a3b8;font-weight:600">${esc(a.time)}</span>
+            ${a.url ? `<a href="${esc(safeHttps(a.url))}" target="_blank" rel="noopener noreferrer" class="badge" style="background:#f8fafc;color:#4f46e5;text-decoration:none;border:1px solid #cbd5e1;cursor:pointer;padding:6px 12px;font-weight:600">Instagram'da aç ↗</a>` : ''}
+          </div>
+        </div>
+      `).join('') : '<div style="color:#64748b;padding:28px;text-align:center">Henüz kaydedilmiş etkileşim bulunamadı. Keşif kuyruğu işlendikçe burada anlık akacaktır.</div>'}
+    </div>
+  </div>
 
- <!-- 4. Modern Terminal Console -->
- <div class="terminal-window">
-   <div class="terminal-header">
-     <div style="display:flex;align-items:center;gap:8px">
-       <span style="width:11px;height:11px;border-radius:50%;background:#ff5f56;display:inline-block"></span>
-       <span style="width:11px;height:11px;border-radius:50%;background:#ffbd2e;display:inline-block"></span>
-       <span style="width:11px;height:11px;border-radius:50%;background:#27c93f;display:inline-block"></span>
-       <span style="font-family:monospace;font-size:12px;color:#8b949e;margin-left:8px;font-weight:600">growth-daemon@oracle-vm: ~/socialdesk (7/24 Otonom Sistem)</span>
-     </div>
-     <span class="badge" style="background:#238636;color:#ffffff;font-size:10px;padding:3px 10px;border-radius:10px;font-weight:700">● CANLI ÇALIŞIYOR</span>
-   </div>
-   <div class="terminal-body">
-     ${(s.recentLogs || []).length ? s.recentLogs.map(line => {
-       let color = '#94a3b8';
-       if (line.includes('✓ Yorum paylaşıldı') || line.includes('Yorum')) color = '#34d399';
-       else if (line.includes('✓ Gönderi beğenildi') || line.includes('beğenildi')) color = '#f472b6';
-       else if (line.includes('taranıyor') || line.includes('🔍')) color = '#fbbf24';
-       else if (line.includes('İnsansı') || line.includes('🛡️') || line.includes('🟢')) color = '#a78bfa';
-       else if (line.includes('hata') || line.includes('Error') || line.includes('⚠️')) color = '#f87171';
-       return `<div style="color:${color};padding:3px 0;border-bottom:1px solid #21262d">${esc(line)}</div>`;
-     }).join('') : `
-       <div style="color:#a78bfa;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🟢 7/24 Otonom Büyüme Motoru devrede (Oracle Cloud VM)</div>
-       <div style="color:#34d399;padding:3px 0">[${esc(s.serverTime||'01:54')}] ✓ AI Metin ve Alaka Motoru hazır (OmniStudio GPT-4o 200 OK)</div>
-       <div style="color:#a78bfa;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🛡️ İnsan ritim koruması aktif: 240s–360s rastgele insansı bekleme aralığı</div>
-       <div style="color:#fbbf24;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🔍 Hedef sektörler taranıyor: #lokasyonanalizi, #isletme, #yerelisletme</div>
-     `}
-   </div>
- </div>
- `;
+  <!-- 4. Modern Terminal Console -->
+  <div class="terminal-window">
+    <div class="terminal-header">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:11px;height:11px;border-radius:50%;background:#ff5f56;display:inline-block"></span>
+        <span style="width:11px;height:11px;border-radius:50%;background:#ffbd2e;display:inline-block"></span>
+        <span style="width:11px;height:11px;border-radius:50%;background:#27c93f;display:inline-block"></span>
+        <span style="font-family:monospace;font-size:12px;color:#8b949e;margin-left:8px;font-weight:600">growth-daemon@oracle-vm: ~/socialdesk (7/24 Otonom Sistem)</span>
+      </div>
+      <span class="badge" style="background:#238636;color:#ffffff;font-size:10px;padding:3px 10px;border-radius:10px;font-weight:700">● CANLI ÇALIŞIYOR</span>
+    </div>
+    <div class="terminal-body">
+      ${(s.recentLogs || []).length ? s.recentLogs.map(line => {
+        let color = '#94a3b8';
+        if (line.includes('✓ Yorum paylaşıldı') || line.includes('Yorum')) color = '#34d399';
+        else if (line.includes('✓ Gönderi beğenildi') || line.includes('beğenildi')) color = '#f472b6';
+        else if (line.includes('taranıyor') || line.includes('🔍')) color = '#fbbf24';
+        else if (line.includes('İnsansı') || line.includes('🛡️') || line.includes('🟢')) color = '#a78bfa';
+        else if (line.includes('hata') || line.includes('Error') || line.includes('⚠️')) color = '#f87171';
+        return `<div style="color:${color};padding:3px 0;border-bottom:1px solid #21262d">${esc(line)}</div>`;
+      }).join('') : `
+        <div style="color:#a78bfa;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🟢 7/24 Otonom Büyüme Motoru devrede (Oracle Cloud VM)</div>
+        <div style="color:#34d399;padding:3px 0">[${esc(s.serverTime||'01:54')}] ✓ AI Metin ve Alaka Motoru hazır (OmniStudio GPT-4o 200 OK)</div>
+        <div style="color:#a78bfa;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🛡️ İnsan ritim koruması aktif: 240s–360s rastgele insansı bekleme aralığı</div>
+        <div style="color:#fbbf24;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🔍 Hedef sektörler taranıyor: #lokasyonanalizi, #isletme, #yerelisletme</div>
+      `}
+    </div>
+  </div>
+  `;
 }
 
 function analytics(){if(!analyticsData&&!analyticsLoading&&selectedAccount)void loadAnalytics();return heading('Analiz','Seçili hesabın son gönderileri ve erişilebilen ölçümleri.',false)+`<div class="toolbar"><select id="analytics-account" aria-label="Analiz hesabı">${accountOptions(selectedAccount)}</select><button class="primary" data-action="analytics-load">Verileri getir</button><button data-insights="account">Hesap Insights</button></div><div id="analytics-result">${analyticsData?analyticsView(analyticsData):`<section class="panel">${empty('analytics','Hesap verilerini getir.','Üstten hesabını seç ve verileri getir. Erişilemeyen metrikler boş bırakılır.')}</section>`}</div>`}

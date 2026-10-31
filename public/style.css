@@ -463,3 +463,155 @@ main{width:100%}h1,h2,h3{text-wrap:balance}button,input,select{min-height:42px}b
 input[type=file]::file-selector-button{font:inherit;border:0;border-radius:6px;background:#eee8f8;color:#6740c6;padding:8px 12px;margin-right:12px;cursor:pointer}.settings-layout>.panel{height:100%}
 
 input[type=checkbox],input[type=radio]{min-height:0;width:16px;height:16px;padding:0;margin:0;flex:none;accent-color:#6740c6}.remember-check{display:flex;align-items:center;gap:8px;flex:1;font-size:12px}.remember-check span{white-space:normal}.login-row-remember .badge-safe{font-size:11px}
+
+/* Polished Global Elements, Responsive Layout & Code Badges */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.shell {
+  display: grid !important;
+  grid-template-columns: 228px minmax(0, 1fr) !important;
+  min-height: 100vh;
+  max-width: 100vw !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+aside {
+  position: sticky !important;
+  top: 0 !important;
+  height: 100vh !important;
+  width: 228px !important;
+  min-width: 228px !important;
+  max-width: 228px !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: #ffffff !important;
+  border-right: 1px solid var(--line) !important;
+  z-index: 10;
+}
+
+.shell > div {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+  padding: 32px 36px !important;
+}
+
+code {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: #ede8f8;
+  color: #582dbf;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid #dcd2f3;
+  letter-spacing: 0.2px;
+  display: inline-block;
+  margin: 1px 2px;
+  vertical-align: middle;
+}
+
+.activity-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.activity-card:hover {
+  border-color: #c7d2fe;
+  background: #fafbff;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.06);
+}
+
+.activity-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.activity-quote {
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-top: 8px;
+  border-left: 3px solid #6366f1;
+  font-style: italic;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.terminal-window {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 24px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.14);
+  max-width: 100%;
+}
+
+.terminal-header {
+  background: #161b22;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #30363d;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.terminal-body {
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px 20px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #c9d1d9;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.terminal-body div {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

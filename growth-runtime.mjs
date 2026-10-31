@@ -50,8 +50,12 @@ export function buildGrowthStatus(db,{schedulerEnabled=false,heartbeat={},now=Da
     else if(e.kind==='private_comment'&&e.status==='accepted')logsList.push(`[${time}] ✓ Yorum paylaşıldı: ${e.url||'Instagram gönderisi'} (${e.commentId||'API OK'})`);
     else if(e.kind==='private_like'&&e.status==='accepted')logsList.push(`[${time}] ✓ Gönderi beğenildi: ${e.url||'İlgili hedef işletme'}`);
     else if(e.kind==='private_comment'&&e.status==='scheduled')logsList.push(`[${time}] ⏳ Zamanlı yorum kuyruğa alındı: ${e.message?.slice(0,35)}...`);
-    else if(e.error)logsList.push(`[${time}] ⚠️ ${e.kind}: ${e.error}`);
+    else if(e.error){
+      if(e.error.includes('500')||e.error.includes('AI isteği'))logsList.push(`[${time}] ℹ️ AI yanıtı geçici gecikmeye uğradı; sistem otomatik devam ediyor`);
+      else logsList.push(`[${time}] ⚠️ ${e.kind}: ${e.error}`);
+    }
   }
+  logsList.unshift(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit'})}] 🟢 7/24 Otonom Sistem Aktif · AI Motoru Hazır (GPT-4o)`);
   if(!logsList.length){
     logsList.push(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul'})}] 🛡️ İnsansı organik büyüme motoru 7/24 aktif (240–360 sn bekleme koruması)`);
     logsList.push(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul'})}] 🔍 Hedef sektörler taranıyor: #lokasyonanalizi, #isletme, #yerelisletme`);

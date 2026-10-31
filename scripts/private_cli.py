@@ -116,15 +116,16 @@ def run():
   if not tag or len(tag)>80 or not tag.replace('_','').isalnum():raise ValueError('Geçerli bir hashtag yazın.')
   items=client.hashtag_medias_recent(tag,amount=12)
   return {'source':'instagram-private-api','items':[{'id':str(m.pk),'url':f'https://www.instagram.com/p/{m.code}/','caption':m.caption_text or '', 'username':m.user.username} for m in items]}
- from urllib.parse import urlparse
- u=urlparse(args.url)
- if u.scheme!='https' or u.hostname not in ('instagram.com','www.instagram.com') or not u.path.startswith(('/p/','/reel/')):raise ValueError('Geçerli Instagram gönderi adresi gerekli.')
- message=str(json.loads(sys.stdin.read()).get('message','')).strip()
- if not message or len(message)>2000:raise ValueError('Yorum 1–2000 karakter olmalı.')
- media_id=client.media_pk_from_url(args.url)
- result=client.media_comment(media_id,message)
- if not getattr(result,'pk',None):raise ValueError('Instagram yorum kimliği dönmedi. Sonuç belirsiz; tekrar göndermeden önce kontrol edin.')
- return {'id':str(result.pk),'accepted':True,'source':'instagram-private-api'}
+ if args.action=='comment':
+  from urllib.parse import urlparse
+  u=urlparse(args.url)
+  if u.scheme!='https' or u.hostname not in ('instagram.com','www.instagram.com') or not u.path.startswith(('/p/','/reel/')):raise ValueError('Geçerli Instagram gönderi adresi gerekli.')
+  message=str(json.loads(sys.stdin.read()).get('message','')).strip()
+  if not message or len(message)>2000:raise ValueError('Yorum 1–2000 karakter olmalı.')
+  media_id=client.media_pk_from_url(args.url)
+  result=client.media_comment(media_id,message)
+  if not getattr(result,'pk',None):raise ValueError('Instagram yorum kimliği dönmedi. Sonuç belirsiz; tekrar göndermeden önce kontrol edin.')
+  return {'id':str(result.pk),'accepted':True,'source':'instagram-private-api'}
  if args.action=='publish':
   caption = ''
   if not sys.stdin.isatty():

@@ -33,7 +33,7 @@ function showLoginScreen(error=''){
 
     <form id="auth-login-form">
       <label>Kullanıcı Adı / ID
-        <input type="text" id="login-username" value="${esc(savedUser)}" autocomplete="username" placeholder="admin veya veriburada" required autofocus>
+        <input type="text" id="login-username" value="${esc(savedUser)}" autocomplete="username" placeholder="Kullanıcı adınızı girin" required autofocus>
       </label>
       
       <label>Yönetim Şifresi
@@ -59,14 +59,8 @@ function showLoginScreen(error=''){
         <span>Panele Giriş Yap</span>
         ${icon('arrow')}
       </button>
-
-      <div class="login-creds-hint">
-        <div class="hint-title">Hızlı Erişim Bilgileri</div>
-        <div class="hint-row"><span>Kullanıcı Adı:</span> <code>admin</code> / <code>veriburada</code></div>
-        <div class="hint-row"><span>Şifre:</span> <code>alidvnc123@</code></div>
-      </div>
-    </form>
-    <small class="login-footer-note">7/24 Oracle Cloud VM & ChatGPT-4o Entegrasyonuyla Çalışmaktadır.</small>
+</form>
+    <small class="login-footer-note">Güvenli Yönetici Paneli · 7/24 Otonom Sistem</small>
   </section>
   <div class="login-side-visual">
     <img class="login-art" src="/workspace-art.svg" alt="Socialdesk İçerik ve Büyüme Masası">

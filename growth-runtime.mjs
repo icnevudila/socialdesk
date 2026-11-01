@@ -47,14 +47,15 @@ export function buildGrowthStatus(db,{schedulerEnabled=false,heartbeat={},now=Da
   const logsList=[];
   const sortedEvents=[...(db.events||[])].sort((a,b)=>Date.parse(b.finishedAt||b.startedAt||b.createdAt||0)-Date.parse(a.finishedAt||a.startedAt||a.createdAt||0)).slice(0,25);
   for(const e of sortedEvents){
-    const time=new Date(e.finishedAt||e.startedAt||e.createdAt||now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit'});
-    if(e.kind==='auto_discovery'&&e.status==='completed')logsList.push(`[${time}] 🔍 Hashtag #${e.tag||'isletme'} tarandı · ${e.queued||0} yorum kuyrukta, ${e.review||0} incelemede`);
-    else if(e.kind==='private_comment'&&e.status==='accepted')logsList.push(`[${time}] ✓ Yorum paylaşıldı: ${e.url||'Instagram gönderisi'} (${e.commentId||'API OK'})`);
-    else if(e.kind==='private_like'&&e.status==='accepted')logsList.push(`[${time}] ✓ Gönderi beğenildi: ${e.url||'İlgili hedef işletme'}`);
-    else if(e.kind==='private_comment'&&e.status==='scheduled')logsList.push(`[${time}] ⏳ Zamanlı yorum kuyruğa alındı: ${e.message?.slice(0,35)}...`);
+    const eventDate=new Date(e.finishedAt||e.startedAt||e.createdAt||now);
+    const isoTime=eventDate.toISOString();
+    if(e.kind==='auto_discovery'&&e.status==='completed')logsList.push(`[${isoTime}] 🔍 Hashtag #${e.tag||'isletme'} tarandı · ${e.queued||0} yorum kuyrukta, ${e.review||0} incelemede`);
+    else if(e.kind==='private_comment'&&e.status==='accepted')logsList.push(`[${isoTime}] ✓ Yorum paylaşıldı: ${e.url||'Instagram gönderisi'} (${e.commentId||'API OK'})`);
+    else if(e.kind==='private_like'&&e.status==='accepted')logsList.push(`[${isoTime}] ✓ Gönderi beğenildi: ${e.url||'İlgili hedef işletme'}`);
+    else if(e.kind==='private_comment'&&e.status==='scheduled')logsList.push(`[${isoTime}] ⏳ Zamanlı yorum kuyruğa alındı: ${e.message?.slice(0,35)}...`);
     else if(e.error){
-      if(e.error.includes('500')||e.error.includes('AI isteği'))logsList.push(`[${time}] ℹ️ AI yanıtı geçici gecikmeye uğradı; sistem otomatik devam ediyor`);
-      else logsList.push(`[${time}] ⚠️ ${e.kind}: ${e.error}`);
+      if(e.error.includes('500')||e.error.includes('AI isteği'))logsList.push(`[${isoTime}] ℹ️ AI yanıtı geçici gecikmeye uğradı; sistem otomatik devam ediyor`);
+      else logsList.push(`[${isoTime}] ⚠️ ${e.kind}: ${e.error}`);
     }
   }
 
@@ -68,7 +69,7 @@ export function buildGrowthStatus(db,{schedulerEnabled=false,heartbeat={},now=Da
 
   const allLogs=[...logsList,...daemonLogs].slice(0,40);
   if(!allLogs.length||!allLogs[0].includes('Otonom Sistem Aktif')){
-    allLogs.unshift(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit'})}] 🟢 7/24 Otonom Sistem Aktif · AI Motoru Hazır (GPT-4o)`);
+    allLogs.unshift(`[${new Date(now).toISOString()}] 🟢 7/24 Otonom Sistem Aktif · AI Motoru Hazır (GPT-4o)`);
   }
   if(!logsList.length){
     logsList.push(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul'})}] 🛡️ İnsansı organik büyüme motoru 7/24 aktif (240–360 sn bekleme koruması)`);

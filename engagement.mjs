@@ -142,13 +142,20 @@ export function createDiscoveryAutomation(store,integrations,{call=privateCall,t
       if(!config.accountId||!config.hashtags.length)throw Error('Önce otomatik etkileşim kurallarını kaydedin.');
       const current=now();
       const today=dayInZone(current);
-      if(!manual&&(localInput(current).slice(11)<'09:00'||localInput(current).slice(11)>'18:00'||current.getTime()<nextCheck))return {skipped:'outside_window'};
+      if(!manual&&(localInput(current).slice(11)<'09:00'||localInput(current).slice(11)>'22:30'||current.getTime()<nextCheck))return {skipped:'outside_window'};
       const a=integrations.account(config.accountId);
       if(!a.verifiedAt||!a.username)throw Error('Otomatik etkileşim için marka hesabını önce doğrulayın.');
-      const key=`auto-discovery:${a.id}:${today}`;
-      if(store.read().events.some(e=>e.key===key))return {skipped:'already_attempted'};
       const daily=store.read().events.filter(e=>e.kind==='private_comment'&&['scheduled','waiting_connection','processing','accepted','reconciliation_required'].includes(e.status)&&dayInZone(e.startedAt||e.scheduledAt||e.approvedAt||current)===today).length;
       if(daily>=config.maxCommentsPerDay)return {skipped:'daily_limit'};
+
+      const todaysDiscoveries=(store.read().events||[]).filter(e=>e.kind==='auto_discovery'&&dayInZone(e.startedAt||e.createdAt||current)===today);
+      const lastDiscovery=todaysDiscoveries.reduce((latest,e)=>Math.max(latest,Date.parse(e.finishedAt||e.startedAt||0)),0);
+      if(!manual&&lastDiscovery&&current.getTime()-lastDiscovery<30*60*1000)return {skipped:'interval_wait'};
+
+      const tagIndex=todaysDiscoveries.length%config.hashtags.length;
+      const tag=config.hashtags[tagIndex];
+      const key=`auto-discovery:${a.id}:${today}:${tag}:${todaysDiscoveries.length}`;
+      if(store.read().events.some(e=>e.key===key))return {skipped:'already_attempted'};
 
       busy=true;
       let event;
@@ -169,8 +176,7 @@ export function createDiscoveryAutomation(store,integrations,{call=privateCall,t
         const identity=await call('identity');
         if(!identity.verified||String(identity.username).toLowerCase()!==String(a.username).toLowerCase())throw Error('Özel Instagram oturumu seçilen marka hesabıyla eşleşmiyor.');
 
-        const tag=config.hashtags[Math.floor(Date.parse(today+'T12:00:00Z')/86400000)%config.hashtags.length];
-        const source=await call('discover',{tag});
+                const source=await call('discover',{tag});
         let queued=0,review=0;
 
         for(const item of (source.items||[]).slice(0,3)){

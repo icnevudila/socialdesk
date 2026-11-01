@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import {timingSafeEqual} from 'node:crypto';
 import {profile} from './meta.mjs';
 import {dayInZone} from './public/time.js';
@@ -55,7 +57,19 @@ export function buildGrowthStatus(db,{schedulerEnabled=false,heartbeat={},now=Da
       else logsList.push(`[${time}] ⚠️ ${e.kind}: ${e.error}`);
     }
   }
-  logsList.unshift(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit'})}] 🟢 7/24 Otonom Sistem Aktif · AI Motoru Hazır (GPT-4o)`);
+
+  let daemonLogs=[];
+  try{
+    const logFile=path.join(process.cwd(),'data','growth_daemon.log');
+    if(fs.existsSync(logFile)){
+      daemonLogs=fs.readFileSync(logFile,'utf8').trim().split('\n').filter(Boolean).slice(-35).reverse();
+    }
+  }catch{}
+
+  const allLogs=[...logsList,...daemonLogs].slice(0,40);
+  if(!allLogs.length||!allLogs[0].includes('Otonom Sistem Aktif')){
+    allLogs.unshift(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit',second:'2-digit'})}] 🟢 7/24 Otonom Sistem Aktif · AI Motoru Hazır (GPT-4o)`);
+  }
   if(!logsList.length){
     logsList.push(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul'})}] 🛡️ İnsansı organik büyüme motoru 7/24 aktif (240–360 sn bekleme koruması)`);
     logsList.push(`[${new Date(now).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul'})}] 🔍 Hedef sektörler taranıyor: #lokasyonanalizi, #isletme, #yerelisletme`);
@@ -75,7 +89,7 @@ export function buildGrowthStatus(db,{schedulerEnabled=false,heartbeat={},now=Da
     publishedCount:(db.posts||[]).filter(p=>(!accountId||p.accountId===accountId)&&p.status==='published'&&p.publishedId).length || 5,
     pendingReview:events.filter(e=>e.status==='reconciliation_required').length,
     actions:actionsList.length?actionsList:accepted.slice(-25).reverse().map(e=>({type:e.kind==='private_like'?'like':'comment',label:e.kind==='private_like'?'Beğeni':'Yorum',url:e.url,text:e.message||'İlgili gönderi beğenildi.',commentId:e.commentId,time:new Date(e.finishedAt||e.startedAt).toLocaleTimeString('tr-TR',{timeZone:'Europe/Istanbul',hour:'2-digit',minute:'2-digit'}),note:'Instagram yanıtı kaydedildi'})),
-    recentLogs:logsList
+    recentLogs:allLogs
   };
 }
 

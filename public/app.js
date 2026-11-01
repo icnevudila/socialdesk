@@ -424,10 +424,13 @@ document.addEventListener('click',async e=>{
   }catch(e){
     r={available:false,metrics:[]};
   }
-  if(!r||!r.available||r.metrics.every(m=>m.error)){
+  const hasValidMetrics=r&&r.available&&Array.isArray(r.metrics)&&r.metrics.length>0&&r.metrics.some(m=>!m.error&&((m.data?.[0]?.total_value?.value??m.data?.[0]?.values?.at(-1)?.value)!==undefined));
+  if(!hasValidMetrics){
     try{
       let priv=analyticsData;
-      if(!priv||!priv.media)priv=await api('private/analytics');
+      if(!priv||!priv.media||!priv.profile){
+        try{priv=await api('private/analytics');if(priv)analyticsData=priv;}catch(pe){}
+      }
       if(isMedia){
         const m=priv?.media?.find(item=>item.id===targetMediaId)||{};
         const likes=m.like_count||0;

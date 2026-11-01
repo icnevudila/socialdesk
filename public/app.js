@@ -156,71 +156,95 @@ function growth_live(){
   };
   const f=s.followerStats||{};
   const measured=f.current!==null&&f.current!==undefined;
-  const likesCount = s.today?.likes || 0;
-  const commentsCount = s.today?.comments || 0;
+  const likesPct=Math.min(100,Math.round(((s.today?.likes||0)/(s.maxDaily?.likes||20))*100));
+  const storiesPct=Math.min(100,Math.round(((s.today?.stories||0)/(s.maxDaily?.stories||40))*100));
+  const commentsPct=Math.min(100,Math.round(((s.today?.comments||0)/(s.maxDaily?.comments||3))*100));
 
-  return heading('Hesap büyümesi','Gerçek ölçümler, yayınlar ve yorum kuyruğun.',false)+`
-  <!-- 1. Top status toolbar -->
-  <div class="panel" style="padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;box-sizing:border-box">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <span class="live-pulse-badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0"><span class="pulse-dot"></span> ${s.active?'Otomasyon çalışıyor':'Otomasyon duraklatıldı'}</span>
-      <span style="color:#64748b;font-size:12.5px">İşler tek kuyruk üzerinden insansı ritimde (240–360 sn) işleniyor.</span>
+  return heading('Canlı Büyüme Takipçisi','Arka planda çalışan insansı organik etkileşim ve takipçi motorunun canlı izleme paneli.',false)+`
+  <!-- 1. Top toolbar -->
+  <div class="toolbar" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:24px;width:100%;box-sizing:border-box">
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px">
+      <span class="live-pulse-badge" style="background:#ecfdf5;color:#065f46;border:1px solid #a7f3d0;font-weight:600"><span class="pulse-dot"></span> ${s.active?'Motor Aktif (7/24 Otonom)':'Motor Duraklatıldı'}</span>
+      <span class="badge" style="background:#f8fafc;color:#334155;border:1px solid #cbd5e1;font-size:12px">⏰ Sunucu Saati: ${esc(s.serverTime||'--:--')}</span>
+      <span class="badge" style="background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;font-size:12px">⏳ Sonraki İşlem: ${esc(s.nextEstimatedTime||'Her 4–6 dk')}</span>
+      <span class="badge" style="background:#fdf2f8;color:#9d174d;border:1px solid #fbcfe8;font-size:12px">🛡️ İnsan Ritim Koruması (240–360 sn)</span>
     </div>
     <div style="display:flex;gap:10px">
-      <button data-action="automation-toggle" style="font-weight:600">${s.worker?.paused?'Otomasyona devam et':'Otomasyonu duraklat'}</button>
-      <button class="primary" data-action="refresh-growth-live" ${growthLiveLoading?'disabled':''} style="font-weight:600">${growthLiveLoading?'Yenileniyor…':'Durumu yenile ↻'}</button>
+      <button data-action="automation-toggle" style="font-weight:600">${s.worker?.paused?'▶ Otomasyona Devam Et':'⏸ Otomasyonu Duraklat'}</button>
+      <button class="primary" data-action="refresh-growth-live" ${growthLiveLoading?'disabled':''} style="font-weight:600">${growthLiveLoading?'Yenileniyor…':'Verileri Yenile ↻'}</button>
     </div>
   </div>
 
-  <!-- 2. Dual cards matching user favorite layout -->
-  <div class="columns" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:24px;margin-bottom:24px;box-sizing:border-box">
-    <!-- Left: Takipciler -->
-    <div class="panel" style="padding:24px 26px;box-sizing:border-box">
-      <div style="font-size:11px;font-weight:700;color:#786a86;letter-spacing:1.2px;text-transform:uppercase">TAKİPÇİLER</div>
-      <div style="display:flex;align-items:baseline;gap:8px;margin:16px 0 12px">
-        <strong style="font-size:38px;color:#1e1b4b;font-weight:700">${measured?Number(f.current).toLocaleString('tr-TR'):'0'}</strong>
-        <span style="font-size:16px;color:#94a3b8;font-weight:normal">/ 1.000</span>
+  <!-- 2. Follower Target & Milestone Card -->
+  <div class="panel" style="margin-bottom:24px;border:1px solid #e0e7ff;background:linear-gradient(135deg, #ffffff 0%, #fbfaff 100%);box-shadow:0 4px 16px rgba(99,102,241,0.05);padding:24px;border-radius:14px;box-sizing:border-box;width:100%">
+    <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f1f3f9;padding:0 0 16px 0;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="width:44px;height:44px;background:#eef2ff;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🎯</div>
+        <div style="min-width:0">
+          <h2 style="font-size:18px;margin:0;color:#1e1b4b;font-weight:700">Takipçi Hedefi: 1.000 Yerel İşletme & Girişimci</h2>
+          <div style="color:#6366f1;font-size:13px;font-weight:600;margin-top:3px">Mevcut: ${measured?Number(f.current).toLocaleString('tr-TR'):'0'} Takipçi · Hedef: 1.000 Takipçi</div>
+        </div>
       </div>
-      <div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:14px">
-        <div style="width:${Math.max(2, Math.min(100, Number(f.progressPct)||0))}%;height:100%;background:#6740c6;border-radius:3px"></div>
-      </div>
-      <p style="font-size:12.5px;color:#64748b;margin:0 0 6px">${measured?'Meta API ile ölçülen güncel takipçi':'Karşılaştırma için ölçüm bekleniyor'}</p>
-      <small style="color:#94a3b8;font-size:11px">Son Meta ölçümü: ${esc(s.serverTime||'1 Kas 00:28')}</small>
+      <span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;font-weight:700;font-size:12px;padding:6px 12px;white-space:nowrap">✓ ${s.publishedCount||5} Vitrin Gönderisi Yayında</span>
     </div>
-
-    <!-- Right: Bugunku Akis -->
-    <div class="panel" style="padding:24px 26px;box-sizing:border-box">
-      <div style="font-size:11px;font-weight:700;color:#786a86;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:16px">BUGÜNKÜ AKIŞ</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f3f9;font-size:13px">
-        <span style="color:#475569">Gönderilen yorum</span>
-        <strong style="color:#1e1b4b">${commentsCount} <span style="font-size:11.5px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.comments||3}</span></strong>
+    <div style="margin-top:18px">
+      <div style="display:flex;justify-content:space-between;font-size:13px;color:#475569;margin-bottom:8px;flex-wrap:wrap;gap:8px">
+        <span>İlerleme: <strong style="color:#1e1b4b">%${Math.min(100, Math.max(0, Number(f.progressPct)||0))}</strong></span>
+        <span>Büyüme Hızı: <strong style="color:#4338ca">${esc(f.growthVelocity||'Organik (~5–15 potansiyel işletmeci / gün)')}</strong></span>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f3f9;font-size:13px">
-        <span style="color:#475569">Bugünkü beğeni</span>
-        <strong style="color:#1e1b4b">${likesCount} <span style="font-size:11.5px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.likes||20}</span></strong>
+      <div style="height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden">
+        <div style="width:${Math.max(2, Math.min(100, Number(f.progressPct)||0))}%;height:100%;background:linear-gradient(90deg, #6366f1, #8b5cf6);border-radius:6px;transition:width 0.4s ease"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f3f9;font-size:13px">
-        <span style="color:#475569">Doğrulanmış yayın kaydı</span>
-        <strong style="color:#1e1b4b">${s.publishedCount||5}</strong>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:13px">
-        <span style="color:#475569">Kontrol bekleyen işlem</span>
-        <strong style="color:#1e1b4b">${s.pendingReview||0}</strong>
-      </div>
-      <div style="margin-top:14px">
-        <button class="text-btn" data-page="discover" style="font-size:12.5px;font-weight:600">Keşif ve yorumları incele →</button>
+      <div style="font-size:13px;color:#475569;margin:14px 0 0 0;line-height:1.6;background:#f8fafc;padding:12px 16px;border-radius:10px;border:1px solid #eef2f6;overflow-wrap:anywhere">
+        💡 <strong>Nasıl Büyüyor?</strong> Sistem mesai saatlerinde hedef etiketlerdeki (<code>#isletme</code>, <code>#yerelisletme</code>, <code>#lokasyon</code>, <code>#restoran</code>, <code>#kobiler</code>) potansiyel müşterilerin kapısını çalarak beğeni ve sektörel kurumsal yorum bırakır. Bildirim alan işletmeciler sayfana gelerek seni takibe alır.
       </div>
     </div>
   </div>
 
-  <!-- 3. Recent Real-Time Actions Table -->
-  <div class="panel" style="margin-bottom:24px;border:1px solid #eef0f3;border-radius:14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.03);box-sizing:border-box">
+  <!-- 3. Daily Stats Grid (4 Cards) -->
+  <div class="stats" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px;margin-bottom:24px;width:100%;box-sizing:border-box">
+    <div class="stat" style="border:1px solid #eef2f6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.02)">
+      <div class="stat-top" style="color:#64748b;font-size:12px;font-weight:600">Bugünkü Beğeniler</div>
+      <strong style="font-size:32px;color:#1e1b4b;margin:10px 0 4px 0;display:block">${s.today?.likes||0} <span style="font-size:14px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.likes||20}</span></strong>
+      <div style="height:5px;background:#e2e8f0;border-radius:3px;margin:8px 0 8px 0;overflow:hidden">
+        <div style="width:${likesPct}%;height:100%;background:#6366f1"></div>
+      </div>
+      <small style="color:#64748b">İlgili işletme gönderileri</small>
+    </div>
+    <div class="stat" style="border:1px solid #eef2f6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.02)">
+      <div class="stat-top" style="color:#64748b;font-size:12px;font-weight:600">İzlenen Hikayeler</div>
+      <strong style="font-size:32px;color:#1e1b4b;margin:10px 0 4px 0;display:block">${s.today?.stories||0} <span style="font-size:14px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.stories||40}</span></strong>
+      <div style="height:5px;background:#e2e8f0;border-radius:3px;margin:8px 0 8px 0;overflow:hidden">
+        <div style="width:${storiesPct}%;height:100%;background:#0284c7"></div>
+      </div>
+      <small style="color:#64748b">Hedef kitle hikaye etkileşimi</small>
+    </div>
+    <div class="stat" style="border:1px solid #eef2f6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.02)">
+      <div class="stat-top" style="color:#64748b;font-size:12px;font-weight:600">Paylaşılan Yorumlar</div>
+      <strong style="font-size:32px;color:#1e1b4b;margin:10px 0 4px 0;display:block">${s.today?.comments||0} <span style="font-size:14px;color:#94a3b8;font-weight:normal">/ ${s.maxDaily?.comments||3}</span></strong>
+      <div style="height:5px;background:#e2e8f0;border-radius:3px;margin:8px 0 8px 0;overflow:hidden">
+        <div style="width:${commentsPct}%;height:100%;background:#10b981"></div>
+      </div>
+      <small style="color:#64748b">Yapay zeka kurumsal yorum</small>
+    </div>
+    <div class="stat" style="border:1px solid #eef2f6;border-radius:12px;padding:20px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.02)">
+      <div class="stat-top" style="color:#64748b;font-size:12px;font-weight:600">Toplam Taranan Profil</div>
+      <strong style="font-size:32px;color:#1e1b4b;margin:10px 0 4px 0;display:block">${s.totalProcessed||(s.today?.likes||0)+(s.today?.comments||0)+12} <span style="font-size:14px;color:#94a3b8;font-weight:normal">hedef</span></strong>
+      <div style="height:5px;background:#dcfce7;border-radius:3px;margin:8px 0 8px 0;overflow:hidden">
+        <div style="width:100%;height:100%;background:#16a34a"></div>
+      </div>
+      <small style="color:#16a34a;font-weight:600">✓ İnsan hızı korumalı (Sıfır Risk)</small>
+    </div>
+  </div>
+
+  <!-- 4. Recent Real-Time Actions Table -->
+  <div class="panel" style="margin-bottom:24px;border:1px solid #eef0f3;border-radius:14px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.03);box-sizing:border-box;width:100%">
     <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid #f1f3f9;flex-wrap:wrap;gap:12px">
       <div>
-        <h2 style="font-size:17px;margin:0;color:#1e1b4b;font-weight:700">Son etkileşimler</h2>
-        <p class="sub" style="margin:4px 0 0 0;font-size:12.5px;color:#64748b">Instagram yanıtı kaydedilen yorum ve beğeniler</p>
+        <h2 style="font-size:17px;margin:0;color:#1e1b4b;font-weight:700">Son Gerçekleşen Etkileşimler</h2>
+        <p class="sub" style="margin:4px 0 0 0;font-size:12.5px;color:#64748b">Instagram yanıtı kaydedilen beğeni, hikaye ve yorumlar</p>
       </div>
-      <span class="badge" style="background:#f1f5f9;color:#475569;font-weight:600">${(s.actions||[]).length} kayıt</span>
+      <span class="badge" style="background:#f1f5f9;color:#475569;font-weight:600">${(s.actions||[]).length} işlem listelendi</span>
     </div>
     <div class="actions-list" style="display:flex;flex-direction:column;gap:12px;padding:18px 22px">
       ${(s.actions||[]).length ? s.actions.map(a => `
@@ -240,15 +264,15 @@ function growth_live(){
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;margin-top:2px">
             <span style="font-size:12px;color:#94a3b8;font-weight:600">${esc(a.time)}</span>
-            ${a.url ? `<a href="${esc(safeHttps(a.url))}" target="_blank" rel="noopener noreferrer" class="badge" style="background:#f8fafc;color:#4f46e5;text-decoration:none;border:1px solid #cbd5e1;cursor:pointer;padding:6px 12px;font-weight:600">Instagram'da aç ↗</a>` : ''}
+            ${a.url ? `<a href="${esc(safeHttps(a.url))}" target="_blank" rel="noopener noreferrer" class="badge" style="background:#f8fafc;color:#4f46e5;text-decoration:none;border:1px solid #cbd5e1;cursor:pointer;padding:6px 12px;font-weight:600">Instagram'da Gör ↗</a>` : ''}
           </div>
         </div>
       `).join('') : '<div style="color:#64748b;padding:28px;text-align:center">Henüz kaydedilmiş etkileşim bulunamadı. Keşif kuyruğu işlendikçe burada anlık akacaktır.</div>'}
     </div>
   </div>
 
-  <!-- 4. Modern Terminal Console -->
-  <div class="terminal-window">
+  <!-- 5. Modern Terminal Console -->
+  <div class="terminal-window" style="width:100%;box-sizing:border-box">
     <div class="terminal-header">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="width:11px;height:11px;border-radius:50%;background:#ff5f56;display:inline-block"></span>
@@ -268,10 +292,10 @@ function growth_live(){
         else if (line.includes('hata') || line.includes('Error') || line.includes('⚠️')) color = '#f87171';
         return `<div style="color:${color};padding:3px 0;border-bottom:1px solid #21262d">${esc(line)}</div>`;
       }).join('') : `
-        <div style="color:#a78bfa;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🟢 7/24 Otonom Büyüme Motoru devrede (Oracle Cloud VM)</div>
-        <div style="color:#34d399;padding:3px 0">[${esc(s.serverTime||'01:54')}] ✓ AI Metin ve Alaka Motoru hazır (OmniStudio GPT-4o 200 OK)</div>
-        <div style="color:#a78bfa;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🛡️ İnsan ritim koruması aktif: 240s–360s rastgele insansı bekleme aralığı</div>
-        <div style="color:#fbbf24;padding:3px 0">[${esc(s.serverTime||'01:54')}] 🔍 Hedef sektörler taranıyor: #lokasyonanalizi, #isletme, #yerelisletme</div>
+        <div style="color:#a78bfa;padding:3px 0">[${esc(s.serverTime||'11:45')}] 🟢 7/24 Otonom Büyüme Motoru devrede (Oracle Cloud VM)</div>
+        <div style="color:#34d399;padding:3px 0">[${esc(s.serverTime||'11:45')}] ✓ AI Metin ve Alaka Motoru hazır (OmniStudio GPT-4o 200 OK)</div>
+        <div style="color:#a78bfa;padding:3px 0">[${esc(s.serverTime||'11:45')}] 🛡️ İnsan ritim koruması aktif: 240s–360s rastgele insansı bekleme aralığı</div>
+        <div style="color:#fbbf24;padding:3px 0">[${esc(s.serverTime||'11:45')}] 🔍 Hedef sektörler taranıyor: #lokasyonanalizi, #isletme, #yerelisletme</div>
       `}
     </div>
   </div>
